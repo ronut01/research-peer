@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "research-peer"
-version = "1.0.0"
+version = "1.1.0"
 description = "Peer-to-peer research handoff for Claude Code"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -19,4 +19,3 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-

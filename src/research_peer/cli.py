@@ -33,18 +33,29 @@ a central relay.
 Quick start:
   research-peer          Open Claude Code with Research Peer enabled
 
-Then use `/research-peer` inside Claude. It guides first-time room creation or
-joining, shows status, and keeps transport details out of the normal workflow.
-If exactly one active room exists, it is selected automatically.
+Then type `/research-peer:` inside Claude to see autocomplete-style actions such
+as `make`, `join`, `ask`, `leave`, and `delete`. If an action needs a value and
+you press Enter without one, Claude asks for it. The plain `/research-peer`
+overview remains available. If exactly one active room exists, it is selected.
+
+Claude slash actions:
+  /research-peer:make    Make a room (asks for its name when omitted)
+  /research-peer:join    Join a room (asks for its invite when omitted)
+  /research-peer:ask     Ask the teammate Claude a question
+  /research-peer:handoff Send structured experiment context and results
+  /research-peer:rooms   List rooms; use `/research-peer:use` to select one
+  /research-peer:leave   Leave while keeping local history
+  /research-peer:delete  Delete one room's local records after confirmation
 
 Commands:
   help [COMMAND]        Show practical help for a command
   doctor               Inspect this server and peer connectivity
   init                 Create local identity and state (user scope, no sudo)
-  room create NAME     Create a UUID room and one-time invite
+  room create NAME     Create a UUID room and one-time invite (`make` is an alias)
   room join INVITE     Join with pinned peer identity
   room list            List rooms without exposing invite secrets
   room leave ROOM      Stop local membership and delivery
+  room delete ROOM     Permanently delete one room's local Research Peer records
   peer list            List authenticated peer fingerprints
   session list         List registered Claude sessions
   session register     Bind one Claude session to one room
@@ -99,16 +110,24 @@ refused, timeout, no-route, TLS fingerprint, and version failures. A one-way
 result requires the peer to run the reciprocal command; doctor never changes a
 firewall, SSH key, or another user's settings.
 """,
-    "room": """room — create, join, list, or leave isolated research contexts
+    "room": """room — create, join, list, leave, or locally delete research contexts
 
   research-peer room create NAME --endpoint THIS_HOST:HIGH_PORT
+  research-peer room make NAME --endpoint THIS_HOST:HIGH_PORT
   research-peer room join INVITE --endpoint THIS_HOST:HIGH_PORT
   research-peer room list
   research-peer room leave ROOM
+  research-peer room delete ROOM --dry-run
+  research-peer room delete ROOM
 
 Room display names may repeat; UUIDs never do. Creation emits a sensitive,
 one-time, expiring invite. Exchange it through an existing secure channel and
 confirm the fingerprints with the peer. Same room names do not discover peers.
+
+Leave keeps local room history but stops session delivery and pending retries.
+Delete first shows an exact local plan and requires local-owner confirmation. It
+removes that room's local messages, outbox, invites, membership, and counters,
+but never project artifacts, another room, or the remote peer's data.
 """,
     "uninstall": """uninstall — remove only Research Peer-owned local items
 
@@ -143,7 +162,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     room = sub.add_parser("room", help="manage rooms")
     room_sub = room.add_subparsers(dest="room_command", required=True)
-    create = room_sub.add_parser("create", help="create room and invite")
+    create = room_sub.add_parser("create", aliases=["make"], help="create room and invite")
     create.add_argument("name")
     create.add_argument("--endpoint", help="advertised HOST:HIGH_PORT (defaults to init config)")
     create.add_argument("--expires-minutes", type=int, default=30)
@@ -153,6 +172,10 @@ def build_parser() -> argparse.ArgumentParser:
     room_sub.add_parser("list", help="list rooms")
     leave = room_sub.add_parser("leave", help="leave room")
     leave.add_argument("room")
+    delete = room_sub.add_parser("delete", help="delete one room's local Research Peer data")
+    delete.add_argument("room")
+    delete.add_argument("--dry-run", action="store_true", help="show the exact deletion plan without changing anything")
+    delete.add_argument("--yes", action="store_true", help="skip local interactive confirmation")
 
     peer = sub.add_parser("peer", help="manage peers")
     peer_sub = peer.add_subparsers(dest="peer_command", required=True)
@@ -394,7 +417,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         paths, config, identity, store = _runtime()
         try:
             if args.command == "room":
-                if args.room_command == "create":
+                if args.room_command in {"create", "make"}:
                     endpoint = args.endpoint or f"{config['listen_host']}:{config['listen_port']}"
                     if config["listen_port"] == 0 and not args.endpoint:
                         raise ValueError("no advertised endpoint configured; run research-peer init --listen HOST:HIGH_PORT or pass --endpoint")
@@ -414,8 +437,24 @@ def main(argv: Sequence[str] | None = None) -> int:
                     _print(store.list_rooms())
                 elif args.room_command == "leave":
                     room = store.resolve_room(args.room)
-                    store.leave_room(room["room_id"])
-                    _print({"left": room["room_id"], "remote_data_removed": False})
+                    cancelled = store.leave_room(room["room_id"])
+                    _print({"left": room["room_id"], "pending_retries_cancelled": cancelled, "history_preserved": True, "remote_data_removed": False})
+                elif args.room_command == "delete":
+                    room = store.resolve_room(args.room, active_only=False)
+                    plan = store.room_delete_plan(room["room_id"])
+                    _print({"action": "delete_local_room", **plan})
+                    if args.dry_run:
+                        return 0
+                    if not args.yes:
+                        if not sys.stdin.isatty():
+                            raise ValueError("refusing non-interactive room deletion without --yes")
+                        answer = input(
+                            f"Type DELETE {room['display_name']} to permanently delete this local room: "
+                        ).strip()
+                        if answer != f"DELETE {room['display_name']}":
+                            print("Room deletion cancelled.")
+                            return 1
+                    _print(store.delete_room(room["room_id"]))
                 return 0
             if args.command == "peer" and args.peer_command == "list":
                 _print(store.list_peers())

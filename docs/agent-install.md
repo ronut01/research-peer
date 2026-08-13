@@ -34,7 +34,7 @@ research-peer uninstall --dry-run
 
 Expected essentials:
 
-- version `1.0.0`
+- version `1.1.0`
 - local bind, loopback, and Unix socket checks pass where the sandbox permits them
 - Claude plugin inventory contains MCP server `channel`
 - plain personal skill exists at `~/.claude/skills/research-peer/SKILL.md`
