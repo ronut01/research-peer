@@ -1,0 +1,18 @@
+{
+  "name": "research-peer-marketplace",
+  "owner": {
+    "name": "Research Peer contributors"
+  },
+  "metadata": {
+    "description": "Authenticated peer-to-peer research handoff for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "research-peer",
+      "source": "./plugin",
+      "description": "Research Peer Channel, MCP tools, and guided Claude skill",
+      "version": "1.0.0",
+      "category": "collaboration"
+    }
+  ]
+}

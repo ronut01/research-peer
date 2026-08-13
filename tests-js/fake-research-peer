@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ "${1:-}" = "session" ] && [ "${2:-}" = "poll" ]; then
+  printf '%s\n' '[]'
+else
+  printf '%s\n' '{}'
+fi
+

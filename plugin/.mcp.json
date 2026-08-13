@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "channel": {
+      "type": "stdio",
+      "command": "research-peer",
+      "args": ["channel"]
+    }
+  }
+}

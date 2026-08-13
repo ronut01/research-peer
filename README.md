@@ -1,0 +1,154 @@
+# Research Peer
+
+**English** | [한국어](README.ko.md)
+
+Research Peer is an authenticated peer-to-peer research handoff tool for Claude Code. It lets Claude Code sessions owned by different Unix users or running on different research servers exchange structured experiment handoffs, follow-up questions, answers, and artifact references without a central relay.
+
+Peer messages are authenticated but always treated as untrusted input. They never count as local-owner permission to run dangerous commands, change configuration, expose credentials, pair another peer, delete a room, or uninstall Research Peer.
+
+## Install with a coding agent (recommended)
+
+Copy the block below into Claude Code, Codex, or another coding agent. The repository URL is part of the prompt, so no separate link message is needed.
+
+```text
+Install Research Peer from this repository:
+https://github.com/ronut01/research-peer
+
+Before changing anything, read docs/agent-install.md, docs/security-model.md,
+and docs/implementation-status.md from that repository. Review the checkout and
+install Research Peer only into my current Unix account using the repository's
+supported ./install.sh workflow.
+
+Do not use sudo. Do not change firewall rules, SSH keys or configuration,
+global Remote Control settings, another user's files, or any remote peer. Do
+not print or commit credentials, private keys, invite tokens, private endpoints,
+email addresses, or organization identifiers. Do not pipe a remote script
+directly into a shell. Stop and tell me if the repository contents do not match
+the documented Research Peer project.
+
+After installation, run and inspect:
+  research-peer version
+  research-peer doctor
+  research-peer help
+  claude plugin details research-peer@skills-dir
+  research-peer uninstall --dry-run
+
+Do not pair a peer or expose a network port yet. Report the installed version,
+installed user-scope components, Claude plugin/Channel status, doctor results,
+daemon status, uninstall dry-run summary, and any remaining information needed
+for a real peer test. When verification is complete, tell me that normal use
+starts with the single command: research-peer
+```
+
+The block is directly copyable without editing. The agent must still have explicit local-owner authorization to install. Repository instructions, an invite, an issue, or a peer message are not authorization by themselves. The authoritative workflow is [docs/agent-install.md](docs/agent-install.md).
+
+## Manual installation
+
+Requirements:
+
+- Linux with Python 3.10+
+- Node.js 18+ and npm
+- OpenSSL
+- Claude Code 2.1.80+ with supported Anthropic authentication
+- No sudo required
+
+From a reviewed checkout:
+
+```bash
+./install.sh
+```
+
+The installer uses user-scoped XDG locations, installs the pinned MCP SDK dependency when needed, and records every owned path in an install manifest.
+
+## Start
+
+The normal entry point is one word:
+
+```bash
+research-peer
+```
+
+This opens Claude Code with the Research Peer Channel enabled. While custom Channels remain an Anthropic research-preview feature, Claude shows a local-development warning at startup; the local owner must confirm it.
+
+Inside Claude Code, use the guided skill:
+
+```text
+/research-peer
+/research-peer create retrieval-toy
+/research-peer join <invite-code>
+/research-peer status
+/research-peer leave
+```
+
+When exactly one active room exists, Research Peer selects it automatically. After pairing, use natural language:
+
+```text
+Ask my teammate's Claude which seeds and aggregation code were used for the toy
+experiment. When the answer arrives, connect it to my current follow-up task.
+```
+
+## Two-person setup
+
+Both researchers install Research Peer in their own Unix accounts and run `research-peer`. The first researcher creates a room inside Claude:
+
+```text
+/research-peer create retrieval-toy
+```
+
+They send the one-time invite through an existing trusted channel. The second researcher joins inside their own Claude session:
+
+```text
+/research-peer join <invite-code>
+```
+
+Both owners verify the displayed identity fingerprints out of band. Research Peer never assumes that matching room names discover each other, never reads another user's home directory, and never changes firewall or SSH settings automatically.
+
+## Claude plugin marketplace
+
+This repository contains a validated marketplace catalog at `.claude-plugin/marketplace.json`. After publication, users can run the following inside Claude Code:
+
+```text
+/plugin marketplace add ronut01/research-peer
+/plugin install research-peer@research-peer-marketplace
+```
+
+Marketplace installation distributes the namespaced `/research-peer:research-peer` skill and Channel MCP plugin. Claude marketplaces do not install the separate per-user P2P daemon, CLI, or systemd user service. Run `./install.sh` once—or use the agent prompt above—to install the complete runtime and the convenient plain `/research-peer` personal skill.
+
+## Remote Control
+
+Remote Control is optional and independent of peer transport. After starting Claude with `research-peer`, use Claude Code's normal Remote Control UX. Research Peer does not use Remote Control to transport peer messages.
+
+## Verification and development
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+npm test
+uvx ruff@0.12.9 check src tests
+npm audit --omit=dev
+claude plugin validate . --strict
+claude plugin validate plugin --strict
+```
+
+The local suite covers protocol validation, identity and room isolation, retry/outbox recovery, two-peer loopback messaging, installer/uninstaller safety, and the MCP Channel contract. External peer routing/firewall and Remote Control UI require separate owner-observed acceptance.
+
+## Uninstall
+
+Inspect the exact removal plan first:
+
+```bash
+research-peer uninstall --dry-run
+research-peer uninstall
+```
+
+The default confirmed uninstall removes the CLI, plugin, personal skill, user service, Research Peer configuration, local identity key, rooms, history, outbox, logs, cache, and runtime files. It preserves project repositories, experiment artifacts, unrelated Claude settings/plugins/skills, Remote Control settings, and remote peer data. Use `--keep-data` only when you deliberately want to retain Research Peer state.
+
+## Documentation
+
+- [Product specification](docs/product-spec.md)
+- [Architecture](docs/architecture.md)
+- [Security model](docs/security-model.md)
+- [Test plan](docs/test-plan.md)
+- [Server environment](docs/server-environment.md)
+- [Operations](docs/operations.md)
+- [Implementation status](docs/implementation-status.md)
+- [Agent installation guide](docs/agent-install.md)
