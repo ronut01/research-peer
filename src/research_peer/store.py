@@ -127,10 +127,100 @@ class Store:
     def list_rooms(self) -> list[dict[str, Any]]:
         return [dict(row) for row in self.connection.execute("SELECT * FROM rooms ORDER BY created_at")]
 
-    def leave_room(self, room_id: str) -> None:
+    def leave_room(self, room_id: str) -> int:
         with self.transaction() as connection:
             connection.execute("UPDATE rooms SET status='left' WHERE room_id=?", (room_id,))
             connection.execute("UPDATE sessions SET active=0, room_id=NULL WHERE room_id=?", (room_id,))
+            cancelled = connection.execute(
+                """UPDATE outbox SET state='cancelled',last_error='ROOM_LEFT'
+                   WHERE state IN ('pending','attempting') AND message_id IN
+                   (SELECT message_id FROM messages WHERE room_id=?)""",
+                (room_id,),
+            ).rowcount
+            connection.execute(
+                """UPDATE messages SET state='cancelled'
+                   WHERE room_id=? AND direction='out' AND state IN ('pending','attempting')""",
+                (room_id,),
+            )
+            return cancelled
+
+    def room_delete_plan(self, room_id: str) -> dict[str, Any]:
+        room = self.resolve_room(room_id, active_only=False)
+
+        def count(query: str) -> int:
+            return int(self.connection.execute(query, (room["room_id"],)).fetchone()[0])
+
+        return {
+            "room_id": room["room_id"],
+            "display_name": room["display_name"],
+            "status": room["status"],
+            "local_only": True,
+            "remove": {
+                "messages": count("SELECT COUNT(*) FROM messages WHERE room_id=?"),
+                "pending_outbox": count(
+                    """SELECT COUNT(*) FROM outbox WHERE state IN ('pending','attempting')
+                       AND message_id IN (SELECT message_id FROM messages WHERE room_id=?)"""
+                ),
+                "invites": count("SELECT COUNT(*) FROM invites WHERE room_id=?"),
+                "peer_memberships": count("SELECT COUNT(*) FROM room_peers WHERE room_id=?"),
+                "session_bindings": count("SELECT COUNT(*) FROM sessions WHERE room_id=?"),
+                "request_counters": count("SELECT COUNT(*) FROM request_counts WHERE room_id=?"),
+                "sequence_counters": count("SELECT COUNT(*) FROM sequence_counters WHERE room_id=?"),
+            },
+            "preserve": [
+                "project repositories",
+                "experiment artifacts",
+                "other rooms",
+                "remote peer data",
+            ],
+        }
+
+    def delete_room(self, room_id: str) -> dict[str, Any]:
+        """Delete one exact local room and its Research Peer-owned records.
+
+        Sessions are preserved as inactive records, but their room binding is
+        cleared. A peer identity is removed only if no other room references it
+        and it has no remaining outbox record.
+        """
+        plan = self.room_delete_plan(room_id)
+        room_id = plan["room_id"]
+        removed_orphan_peers = 0
+        with self.transaction() as connection:
+            peer_rows = connection.execute(
+                """SELECT p.peer_id,p.fingerprint FROM peers p
+                   JOIN room_peers rp ON rp.peer_id=p.peer_id WHERE rp.room_id=?""",
+                (room_id,),
+            ).fetchall()
+            connection.execute("UPDATE sessions SET active=0,room_id=NULL WHERE room_id=?", (room_id,))
+            connection.execute(
+                "DELETE FROM outbox WHERE message_id IN (SELECT message_id FROM messages WHERE room_id=?)",
+                (room_id,),
+            )
+            connection.execute("DELETE FROM messages WHERE room_id=?", (room_id,))
+            connection.execute("DELETE FROM invites WHERE room_id=?", (room_id,))
+            connection.execute("DELETE FROM request_counts WHERE room_id=?", (room_id,))
+            connection.execute("DELETE FROM sequence_counters WHERE room_id=?", (room_id,))
+            connection.execute("DELETE FROM room_peers WHERE room_id=?", (room_id,))
+            connection.execute("DELETE FROM rooms WHERE room_id=?", (room_id,))
+            for peer in peer_rows:
+                still_used = connection.execute(
+                    """SELECT 1 FROM room_peers WHERE peer_id=?
+                       UNION SELECT 1 FROM outbox WHERE peer_id=? LIMIT 1""",
+                    (peer["peer_id"], peer["peer_id"]),
+                ).fetchone()
+                if still_used:
+                    continue
+                connection.execute("DELETE FROM replay_nonces WHERE fingerprint=?", (peer["fingerprint"],))
+                connection.execute("DELETE FROM rate_events WHERE fingerprint=?", (peer["fingerprint"],))
+                connection.execute("DELETE FROM peers WHERE peer_id=?", (peer["peer_id"],))
+                removed_orphan_peers += 1
+        return {
+            "deleted": room_id,
+            "display_name": plan["display_name"],
+            "removed": {**plan["remove"], "orphan_peers": removed_orphan_peers},
+            "remote_data_removed": False,
+            "project_artifacts_removed": False,
+        }
 
     @staticmethod
     def token_hash(token: str) -> str:

@@ -17,7 +17,7 @@ class HelpLauncherTests(unittest.TestCase):
     def test_main_help_has_required_actions_and_security(self) -> None:
         code, output = self.capture(["help"])
         self.assertEqual(0, code)
-        for phrase in ("Quick start", "room create", "Remote Control", "handoff", "uninstall", "untrusted", "logs"):
+        for phrase in ("Quick start", "/research-peer:make", "room create", "room delete", "Remote Control", "handoff", "uninstall", "untrusted", "logs"):
             self.assertIn(phrase, output)
 
     def test_subcommand_help(self) -> None:
@@ -40,6 +40,15 @@ class HelpLauncherTests(unittest.TestCase):
         code, output = self.capture([])
         self.assertEqual(0, code)
         self.assertIn("research-peer          Open Claude Code", output)
+
+    def test_room_make_alias_and_delete_flags_parse(self) -> None:
+        from research_peer.cli import build_parser
+
+        make = build_parser().parse_args(["room", "make", "toy"])
+        self.assertEqual("make", make.room_command)
+        delete = build_parser().parse_args(["room", "delete", "toy", "--dry-run"])
+        self.assertTrue(delete.dry_run)
+        self.assertFalse(delete.yes)
 
 
 if __name__ == "__main__":

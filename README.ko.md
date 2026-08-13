@@ -68,15 +68,22 @@ research-peer
 
 Research Peer Channel이 활성화된 Claude Code가 열립니다. custom Channel이 Anthropic research preview인 동안에는 시작 시 local-development 경고가 표시되며 local owner가 직접 확인해야 합니다.
 
-Claude Code 안에서는 다음처럼 사용합니다.
+Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동완성 목록처럼 보입니다.
 
 ```text
 /research-peer
-/research-peer create retrieval-toy
-/research-peer join <invite-code>
-/research-peer status
-/research-peer leave
+/research-peer:make
+/research-peer:join
+/research-peer:ask
+/research-peer:handoff
+/research-peer:rooms
+/research-peer:use
+/research-peer:status
+/research-peer:leave
+/research-peer:delete
 ```
+
+`/research-peer:make`만 입력하고 Enter를 누르면 room 이름을 물어보고, `:join`은 invite를, `:ask`는 질문 내용을 물어봅니다. 내부 CLI 명령을 외울 필요가 없습니다. plain `/research-peer`는 전체 안내로 계속 사용할 수 있습니다.
 
 활성 room이 하나면 자동 선택됩니다. pairing 후에는 transport 명령을 만들 필요 없이 자연어로 요청합니다.
 
@@ -90,13 +97,13 @@ Claude Code 안에서는 다음처럼 사용합니다.
 두 연구자 모두 자기 Unix 계정에 설치하고 `research-peer`를 실행합니다. 첫 번째 연구자는 Claude 안에서 room을 만듭니다.
 
 ```text
-/research-peer create retrieval-toy
+/research-peer:make retrieval-toy
 ```
 
 일회용 invite를 기존의 안전한 채널로 전달합니다. 두 번째 연구자는 자기 Claude 안에서 가입합니다.
 
 ```text
-/research-peer join <invite-code>
+/research-peer:join <invite-code>
 ```
 
 양쪽 owner가 표시된 identity fingerprint를 별도 채널로 확인합니다. 같은 room 이름을 입력했다고 자동 발견하지 않으며, 다른 사용자의 home을 읽지 않고 firewall이나 SSH 설정을 자동 변경하지 않습니다.
@@ -110,7 +117,11 @@ Claude Code 안에서는 다음처럼 사용합니다.
 /plugin install research-peer@research-peer-marketplace
 ```
 
-Marketplace는 namespaced `/research-peer:research-peer` skill과 Channel MCP plugin을 배포합니다. 별도의 user P2P daemon, CLI, systemd user service는 설치하지 않으므로 `./install.sh`를 한 번 실행하거나 위의 에이전트 설치 프롬프트를 사용해야 합니다. 전체 runtime installer는 편의를 위한 plain `/research-peer` personal skill도 설치합니다.
+Marketplace는 namespaced action skill(`/research-peer:make`, `:join`, `:ask`, `:handoff`, `:rooms`, `:use`, `:status`, `:leave`, `:delete`, `:peers`, `:help`)과 Channel MCP plugin을 배포합니다. 별도의 user P2P daemon, CLI, systemd user service는 설치하지 않으므로 `./install.sh`를 한 번 실행하거나 위의 에이전트 설치 프롬프트를 사용해야 합니다. 전체 runtime installer는 편의를 위한 plain `/research-peer` personal skill도 설치합니다.
+
+## Room 나가기와 삭제
+
+`/research-peer:leave`는 해당 room의 local 수신과 대기 중 재시도를 멈추지만 history는 보존합니다. `/research-peer:delete`는 정확한 local 삭제 계획을 먼저 보여주고 local owner에게 명시적인 확인을 받습니다. 확인 후 그 room의 Research Peer message, outbox, invite, membership, counter만 삭제합니다. project repository, experiment artifact, 다른 room, 상대 peer 데이터는 삭제하지 않습니다.
 
 ## Remote Control
 

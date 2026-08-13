@@ -37,7 +37,7 @@ test('real stdio MCP handshake exposes only safe tools and channel capability', 
       RESEARCH_PEER_POLL_MS: '10000'
     }
   })
-  const client = new Client({ name: 'research-peer-test', version: '1.0.0' })
+  const client = new Client({ name: 'research-peer-test', version: '1.1.0' })
   await client.connect(transport)
   try {
     const capabilities = client.getServerCapabilities()

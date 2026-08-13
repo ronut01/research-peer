@@ -70,15 +70,22 @@ research-peer
 
 This opens Claude Code with the Research Peer Channel enabled. While custom Channels remain an Anthropic research-preview feature, Claude shows a local-development warning at startup; the local owner must confirm it.
 
-Inside Claude Code, use the guided skill:
+Inside Claude Code, type `/research-peer:` to get autocomplete-style actions:
 
 ```text
 /research-peer
-/research-peer create retrieval-toy
-/research-peer join <invite-code>
-/research-peer status
-/research-peer leave
+/research-peer:make
+/research-peer:join
+/research-peer:ask
+/research-peer:handoff
+/research-peer:rooms
+/research-peer:use
+/research-peer:status
+/research-peer:leave
+/research-peer:delete
 ```
+
+Pressing Enter on `/research-peer:make` asks for the room name; `/research-peer:join` asks for the invite; `/research-peer:ask` asks for the question. You do not need to memorize the underlying CLI. The plain `/research-peer` overview remains available.
 
 When exactly one active room exists, Research Peer selects it automatically. After pairing, use natural language:
 
@@ -92,13 +99,13 @@ experiment. When the answer arrives, connect it to my current follow-up task.
 Both researchers install Research Peer in their own Unix accounts and run `research-peer`. The first researcher creates a room inside Claude:
 
 ```text
-/research-peer create retrieval-toy
+/research-peer:make retrieval-toy
 ```
 
 They send the one-time invite through an existing trusted channel. The second researcher joins inside their own Claude session:
 
 ```text
-/research-peer join <invite-code>
+/research-peer:join <invite-code>
 ```
 
 Both owners verify the displayed identity fingerprints out of band. Research Peer never assumes that matching room names discover each other, never reads another user's home directory, and never changes firewall or SSH settings automatically.
@@ -112,7 +119,11 @@ This repository contains a validated marketplace catalog at `.claude-plugin/mark
 /plugin install research-peer@research-peer-marketplace
 ```
 
-Marketplace installation distributes the namespaced `/research-peer:research-peer` skill and Channel MCP plugin. Claude marketplaces do not install the separate per-user P2P daemon, CLI, or systemd user service. Run `./install.sh` once—or use the agent prompt above—to install the complete runtime and the convenient plain `/research-peer` personal skill.
+Marketplace installation distributes the namespaced action skills (`/research-peer:make`, `:join`, `:ask`, `:handoff`, `:rooms`, `:use`, `:status`, `:leave`, `:delete`, `:peers`, `:help`) and the Channel MCP plugin. Claude marketplaces do not install the separate per-user P2P daemon, CLI, or systemd user service. Run `./install.sh` once—or use the agent prompt above—to install the complete runtime and the convenient plain `/research-peer` personal skill.
+
+## Leave or delete a room
+
+`/research-peer:leave` stops local delivery and pending retries but keeps local room history. `/research-peer:delete` first shows an exact local deletion plan, then asks the local owner for an explicit confirmation. It removes that room's local Research Peer messages, outbox, invites, membership, and counters. It never deletes project repositories, experiment artifacts, other rooms, or the remote peer's data.
 
 ## Remote Control
 

@@ -50,9 +50,11 @@ research-peer start [--room ROOM] [--remote-control|--no-remote-control]
 research-peer stop
 research-peer status
 research-peer room create NAME
+research-peer room make NAME
 research-peer room join INVITE
 research-peer room list
 research-peer room leave ROOM
+research-peer room delete ROOM [--dry-run] [--yes]
 research-peer peer list
 research-peer session list
 research-peer session register
@@ -67,18 +69,23 @@ research-peer uninstall [--dry-run] [--keep-data] [--yes] [--purge]
 
 ### Claude Code skill
 
-목표 UX는 `/research-peer ...`다.
+plain `/research-peer`는 overview/fallback이고, plugin action skill은 Claude의 `/` 검색 목록에서 자동완성처럼 노출된다.
 
 ```text
-/research-peer create retrieval-toy
-/research-peer join <invite-code>
-/research-peer retrieval-toy
-/research-peer status
-/research-peer peers
-/research-peer rooms
-/research-peer leave
-/research-peer help
+/research-peer:make [room-name]
+/research-peer:join [invite-code]
+/research-peer:ask [question]
+/research-peer:handoff [experiment]
+/research-peer:rooms
+/research-peer:use [room]
+/research-peer:status
+/research-peer:peers
+/research-peer:leave [room]
+/research-peer:delete [room]
+/research-peer:help
 ```
+
+인자가 필요한 action을 인자 없이 실행하면 Claude가 필요한 값 하나를 물어본다. 특히 `make`는 room 이름, `join`은 invite, `ask`는 질문을 요청한다. 한 skill 내부의 두 번째 단어를 Claude slash menu가 완성한다고 가정하지 않고 각 action을 독립 plugin skill로 제공한다.
 
 **[OFFICIAL]** personal skill은 `~/.claude/skills/research-peer/SKILL.md`로 `/research-peer`를 제공할 수 있다. plugin 안의 skill/tool에는 plugin scope/namespace가 붙는다. 따라서 personal skill은 얇은 stable UX이고, 별도 skills-directory plugin은 Channel/MCP server를 제공한다. peer가 보낸 inbound text는 skill 또는 uninstall을 호출할 local-owner 승인으로 간주하지 않는다.
 
@@ -86,7 +93,7 @@ research-peer uninstall [--dry-run] [--keep-data] [--yes] [--purge]
 
 정상 사용자 진입점은 인자 없는 `research-peer` 한 단어다. 이는 Channel flag를 감춘 채 Claude Code를 시작하고, 활성 room이 정확히 하나면 자동 binding한다. 이후 create/join/status/ask/leave는 `/research-peer` 또는 자연어로 수행한다. **[OFFICIAL]** Channel은 session-start opt-in이므로 이미 열린 일반 Claude session에서 slash command만으로 inbound injection을 동적으로 활성화할 수는 없다.
 
-**[OFFICIAL]** marketplace는 plugin skill/MCP/Channel의 discovery, cache install, version/update를 제공하지만 Research Peer의 별도 per-user daemon/service/CLI 설치 수단은 아니다. v1 distribution은 trusted Git/release의 `./install.sh`로 runtime을 한 번 설치하고, marketplace는 Claude component 배포에 사용한다. plugin skill은 `/research-peer:research-peer`, installer가 설치하는 thin personal skill은 plain `/research-peer`를 제공한다.
+**[OFFICIAL]** marketplace는 plugin skill/MCP/Channel의 discovery, cache install, version/update를 제공하지만 Research Peer의 별도 per-user daemon/service/CLI 설치 수단은 아니다. v1 distribution은 trusted Git/release의 `./install.sh`로 runtime을 한 번 설치하고, marketplace는 Claude component 배포에 사용한다. plugin action skills는 `/research-peer:make` 같은 namespace를 사용하고, installer가 설치하는 thin personal skill은 plain `/research-peer`를 제공한다.
 
 ### Room과 session
 
@@ -97,7 +104,8 @@ research-peer uninstall [--dry-run] [--keep-data] [--yes] [--purge]
 - joiner와 creator는 public-key fingerprint/pairing code를 확인한다.
 - 여러 room과 session을 저장할 수 있지만 v1에서 Claude session당 활성 room은 최대 하나다.
 - 없는/종료/stale session을 다른 session으로 자동 reroute하지 않는다.
-- leave는 해당 session binding과 수신을 중단하며 다른 room의 context를 섞지 않는다.
+- leave는 해당 local room의 session binding·수신·pending retry를 중단하고 history는 보존한다.
+- delete는 local owner에게 exact dry-run plan과 명시적 confirmation을 요구한 뒤 선택한 room의 local messages/outbox/invites/membership/counters만 제거한다. project/artifact, 다른 room, remote peer data는 제거하지 않는다.
 
 ## Invite와 pairing
 
@@ -179,7 +187,7 @@ artifact는 Git commit, 접근 가능한 URL, 공유 storage path, content hash,
 
 **[OFFICIAL]** custom Channel은 local stdio MCP server이며 `experimental['claude/channel'] = {}`를 선언하고 `notifications/claude/channel`을 보내면 열린 기존 session의 context에 `<channel ...>` provenance로 event가 들어간다. Channel notification 자체에는 Claude 처리 ACK가 없으므로 Research Peer의 transport ACK와 Claude-consumption 상태는 분리한다. custom Channel은 research preview이고 `--dangerously-load-development-channels plugin:research-peer@skills-dir`가 필요하다. `--channels`와 development flag는 `claude --help`에 숨겨져 있지만 이 서버의 현재 2.1.231가 실제 파싱하고 Channel을 연결함을 확인했다. 조직의 `channelsEnabled`는 이 우회보다 우선한다.
 
-Channel은 session 시작 시 load한다. `/research-peer ROOM`은 local binding을 활성화하고 `/research-peer leave`는 binding을 끊는다. daemon은 유지될 수 있지만 inactive room event는 Claude context로 들어가지 않는다. 실행 중에 development Channel을 임의 load/unload할 수 있다고 가정하지 않는다.
+Channel은 session 시작 시 load한다. `/research-peer:use ROOM`은 local binding을 활성화하고 `/research-peer:leave`는 binding을 끊는다. daemon은 유지될 수 있지만 inactive room event는 Claude context로 들어가지 않는다. 실행 중에 development Channel을 임의 load/unload할 수 있다고 가정하지 않는다.
 
 Research Peer Channel은 **permission relay capability를 절대 선언하지 않는다.** peer message는 user approval이 아니다. inbound에는 `room`, authenticated `sender`, `message_id`, `request_id`, `type`, `untrusted_peer_input=true` provenance를 표시한다. outbound MCP tools는 message 전송만 하며 config 변경, pairing, leave/delete, uninstall, permission 승인 도구를 노출하지 않는다.
 

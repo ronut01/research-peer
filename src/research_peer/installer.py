@@ -88,7 +88,7 @@ def _assert_owned_or_absent(path: Path, previous: dict[str, Any] | None) -> None
 def install(source_root: Path, paths: Paths | None = None) -> dict[str, Any]:
     paths = paths or Paths.discover()
     source_root = source_root.resolve()
-    required = [source_root / "src/research_peer", source_root / "channel/research-peer-channel.mjs", source_root / "channel/security.mjs", source_root / "plugin/.claude-plugin/plugin.json", source_root / "plugin/.mcp.json", source_root / "skill/SKILL.md"]
+    required = [source_root / "src/research_peer", source_root / "channel/research-peer-channel.mjs", source_root / "channel/security.mjs", source_root / "plugin/.claude-plugin/plugin.json", source_root / "plugin/.mcp.json", source_root / "plugin/skills", source_root / "skill/SKILL.md"]
     missing = [str(path) for path in required if not path.exists()]
     if missing:
         raise FileNotFoundError("source tree is incomplete: " + ", ".join(missing))
@@ -136,6 +136,7 @@ def install(source_root: Path, paths: Paths | None = None) -> dict[str, Any]:
     (plugin_dir / "channel").mkdir(parents=True, exist_ok=True, mode=0o700)
     _copy_file(source_root / "plugin/.claude-plugin/plugin.json", plugin_dir / ".claude-plugin/plugin.json")
     _copy_file(source_root / "plugin/.mcp.json", plugin_dir / ".mcp.json")
+    _copy_tree(source_root / "plugin/skills", plugin_dir / "skills", records, "program")
     _copy_file(source_root / "channel/research-peer-channel.mjs", plugin_dir / "channel/research-peer-channel.mjs", 0o755)
     _copy_file(source_root / "channel/security.mjs", plugin_dir / "channel/security.mjs", 0o644)
     node_link = plugin_dir / "node_modules"

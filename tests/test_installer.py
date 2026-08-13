@@ -47,6 +47,8 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue((self.home / ".claude/skills/research-peer/SKILL.md").exists())
         self.assertTrue((self.home / ".claude/skills/research-peer-plugin/.claude-plugin/plugin.json").exists())
         self.assertTrue((self.home / ".claude/skills/research-peer-plugin/.mcp.json").exists())
+        for action in ("make", "join", "ask", "handoff", "rooms", "use", "status", "leave", "delete", "peers"):
+            self.assertTrue((self.home / f".claude/skills/research-peer-plugin/skills/{action}/SKILL.md").exists())
         before = self.paths.manifest_file.read_bytes()
         dry = self.run_cli("uninstall", "--dry-run", "--purge")
         self.assertEqual(0, dry.returncode, dry.stderr)

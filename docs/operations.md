@@ -8,7 +8,7 @@
 research-peer
 ```
 
-이 명령이 Research Peer Channel을 활성화한 Claude Code를 연다. 활성 room이 정확히 하나면 자동 선택한다. 이후에는 Claude 안에서 `/research-peer`를 입력해 guided create/join/status를 사용하거나 “팀원 Claude에게 seed를 물어봐”처럼 자연어로 요청한다. 사용자가 `init`, `session register`, `send`, Channel flag를 기억하는 것을 정상 UX로 요구하지 않는다.
+이 명령이 Research Peer Channel을 활성화한 Claude Code를 연다. 활성 room이 정확히 하나면 자동 선택한다. 이후에는 Claude 안에서 `/research-peer:`를 입력해 `make`, `join`, `ask`, `handoff`, `rooms`, `use`, `status`, `leave`, `delete`, `peers`, `help`를 자동완성 목록처럼 고른다. `make`/`join`/`ask`에 인자가 없으면 Claude가 room 이름/invite/질문을 물어본다. 사용자가 `init`, `session register`, `send`, Channel flag를 기억하는 것을 정상 UX로 요구하지 않는다.
 
 Anthropic Channels는 session 시작 시 opt-in해야 하므로 이미 열린 일반 `claude` session에서 `/research-peer`만으로 inbound Channel을 동적으로 켤 수는 없다. 이때 skill은 복잡한 flag 대신 한 번 종료 후 `research-peer`로 다시 열라고 안내한다.
 
@@ -27,7 +27,7 @@ fingerprint/pairing code는 기존 voice/chat 등으로 양쪽 owner가 확인�
 
 ## 설치
 
-source checkout에서(현재 서버에는 이미 1.0.0이 user scope에 설치됨):
+source checkout에서(현재 서버에는 이미 1.1.0이 user scope에 설치됨):
 
 ```text
 ./install.sh
@@ -39,10 +39,10 @@ research-peer help
 
 ### 팀원에게 전달
 
-즉시 테스트하려면 [release archive](../dist/research-peer-1.0.0.tar.gz)를 기존의 신뢰할 수 있는 파일 전달 수단으로 팀원에게 보낸다. 팀원은 자기 server/account에서 한 번만 실행한다.
+즉시 테스트하려면 [release archive](../dist/research-peer-1.1.0.tar.gz)를 기존의 신뢰할 수 있는 파일 전달 수단으로 팀원에게 보낸다. 팀원은 자기 server/account에서 한 번만 실행한다.
 
 ```text
-mkdir research-peer && tar -xzf research-peer-1.0.0.tar.gz -C research-peer
+mkdir research-peer && tar -xzf research-peer-1.1.0.tar.gz -C research-peer
 cd research-peer
 ./install.sh
 research-peer
@@ -57,7 +57,7 @@ Git 원격에 이 repository를 올린 뒤에는 Claude 안에서도 marketplace
 /plugin install research-peer@research-peer-marketplace
 ```
 
-Marketplace는 skill/Channel/MCP를 Claude plugin cache에 배포하고 update/discovery를 제공한다. Claude plugin installer는 임의의 user daemon, systemd service, `~/.local/bin` CLI를 설치하지 않으므로 P2P runtime에는 같은 신뢰된 repository의 `./install.sh`가 여전히 한 번 필요하다. Marketplace skill은 namespace 규칙에 따라 `/research-peer:research-peer`이며 installer는 편의를 위해 plain personal `/research-peer`도 설치한다.
+Marketplace는 skill/Channel/MCP를 Claude plugin cache에 배포하고 update/discovery를 제공한다. Claude plugin installer는 임의의 user daemon, systemd service, `~/.local/bin` CLI를 설치하지 않으므로 P2P runtime에는 같은 신뢰된 repository의 `./install.sh`가 여전히 한 번 필요하다. Marketplace action skill은 namespace 규칙에 따라 `/research-peer:make` 등으로 보이며 installer는 편의를 위해 plain personal `/research-peer`도 설치한다.
 
 공식 source와 marketplace catalog는 `https://github.com/ronut01/research-peer`에 게시한다. secret, 실제 peer endpoint, local keys/state는 repository, archive, marketplace에 포함하지 않는다.
 
@@ -104,7 +104,7 @@ research-peer send --room retrieval-toy --to-session followup-experiment \
   --type ANSWER --request-id REQUEST_ID --text '...'
 ```
 
-Claude에서는 `/research-peer help`, `/research-peer retrieval-toy`, `/research-peer leave`를 사용한다. inbound는 authenticated peer provenance를 가진 untrusted input이다. credential/transcript/env/file content는 자동 공유하지 않는다.
+Claude에서는 `/research-peer:help`, `/research-peer:use retrieval-toy`, `/research-peer:ask`, `/research-peer:handoff`를 사용한다. inbound는 authenticated peer provenance를 가진 untrusted input이다. credential/transcript/env/file content는 자동 공유하지 않는다.
 
 ## 상태, logs, recovery
 
@@ -119,16 +119,18 @@ research-peer doctor --peer HOST:PORT
 
 `pending`은 outbox retry 예정, `delivered`는 peer daemon이 durable 수신/ACK, `failed`는 permanent 또는 exhausted다. `no_target_session`은 exact target이 없거나 blank target에 active session이 하나가 아닌 상태다. delivered는 Claude가 읽거나 반영했다는 뜻이 아니다.
 
-daemon crash 후 service restart가 pending outbox를 복구한다. stale session은 자동 reroute되지 않으므로 session을 resume/restart한 뒤 `session register` 또는 `/research-peer ROOM`으로 다시 bind한다.
+daemon crash 후 service restart가 pending outbox를 복구한다. stale session은 자동 reroute되지 않으므로 session을 resume/restart한 뒤 `session register` 또는 `/research-peer:use ROOM`으로 다시 bind한다.
 
-## Room leave와 stop
+## Room leave, delete와 stop
 
 ```text
 research-peer room leave retrieval-toy
+research-peer room delete retrieval-toy --dry-run
+research-peer room delete retrieval-toy
 research-peer stop
 ```
 
-Claude `/research-peer leave`는 현재 session binding을 끊는다. CLI room leave는 local membership을 inactive로 만들어 inbound를 거부한다. 상대 peer data는 원격 삭제하지 않는다.
+Claude `/research-peer:leave`와 CLI room leave는 local membership/session을 inactive로 만들고 inbound와 pending retry를 중단하지만 local history는 보존한다. `/research-peer:delete`는 dry-run의 exact count를 먼저 보여주고 local owner에게 `DELETE <display-name>` 확인을 받은 뒤 `--yes`를 실행한다. 그 room의 messages, outbox, invites, membership, counters만 local에서 삭제한다. project repositories/artifacts, 다른 room, 상대 peer data는 삭제하지 않는다.
 
 ## 진단 결과 해석
 
@@ -198,5 +200,5 @@ research-peer help doctor
 research-peer help room
 research-peer help uninstall
 research-peer send --help
-/research-peer help
+/research-peer:help
 ```

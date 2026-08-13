@@ -50,7 +50,7 @@
 - hidden `--channels`와 `--dangerously-load-development-channels`를 `--version`과 함께 실행해 이 binary가 두 option을 parse함을 확인했다.
 - system managed settings의 일반 Linux 경로에서 Research Peer가 확인한 파일은 없었다. 현재 로그인에서는 실제 development Channel session 두 개가 시작됐으므로 이 계정에 대한 Channel startup 차단은 관찰되지 않았다. 다른 조직 정책은 별도다.
 - `/research-peer`는 `~/.claude/skills/research-peer/SKILL.md` personal skill로, Channel/MCP는 `.claude-plugin/plugin.json`이 있는 skills-directory plugin으로 제공한다.
-- 실제 plugin inventory가 `.mcp.json`의 Channel server 1개를 발견했고, interactive `/mcp`에서 connected/2 tools로 표시됐다. 실제 `/research-peer help`도 plain command로 실행됐다.
+- 실제 plugin inventory가 `.mcp.json`의 Channel server 1개와 12개 skill(research-peer overview + make/join/ask/handoff/rooms/use/status/leave/delete/peers/help)을 발견했다. interactive `/mcp`에서 connected/2 tools로 표시됐고 실제 `/research-peer help`도 plain command로 실행됐다.
 
 ## 공식 문서로 확인한 외부 기능
 
@@ -74,7 +74,7 @@
 
 ## 구현 후 현재 설치 상태
 
-- **[SERVER-VERIFIED]** Research Peer 1.0.0을 user scope에 설치했다.
+- **[SERVER-VERIFIED]** Research Peer 1.1.0을 user scope에 설치하고 user daemon을 재시작했다. 기존 identity fingerprint는 유지됐고 room/peer/outbox는 0이었다.
 - CLI, personal skill, skills-directory plugin, user service, XDG config/state/cache, install manifest가 생성됐다.
 - user service는 enabled이며 smoke 동안 systemd user mode로 시작해 loopback port에 bind한 뒤 중지했다. 최종 상태는 inactive/stopped다.
 - 실제 기본 `research-peer uninstall --dry-run`이 program owned entry와 config/state/cache/runtime의 exact removal plan을 표시했으며 mutation은 없었다.

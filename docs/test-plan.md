@@ -8,7 +8,7 @@
 
 ## 2026-08-13 실행 결과 요약
 
-- Python unittest: 19 tests pass (unit, installer, launcher UX, 2-peer loopback E2E)
+- Python unittest: 22 tests pass (room delete/leave cleanup, installer action-skill, 2-peer loopback E2E 포함)
 - Node test: 4 tests pass, 실제 stdio MCP initialize/listTools handshake 포함
 - Ruff 0.12.9: pass
 - Python compileall: pass
@@ -20,7 +20,8 @@
 - two real Claude Code processes: A QUESTION Channel injection → B MCP ANSWER → A correlated context recall: pass
 - actual plain `/research-peer help` personal skill invocation: pass
 - actual no-argument `research-peer` TTY launch and development-Channel startup: pass
-- strict marketplace validation and isolated add/install inventory (skill 1, MCP 1): pass
+- strict marketplace/plugin validation: pass; 실제 설치 inventory (skills 12, MCP 1): pass
+- actual installed `/research-peer:make` without arguments asked the owner for a room name: pass
 - release archive clean install, installed CLI Channel handshake, full uninstall residue-none: pass
 
 ## Static/unit
@@ -32,10 +33,11 @@
 - store: migrations, room name collision, outbox state machine, dedup, replay, restart recovery
 - retry: deterministic capped backoff, permanent/transient classification
 - transport: frame length, truncated/invalid JSON, TLS pin match/mismatch, auth failure
-- routing: exact session, missing/stale target, room isolation, leave
+- routing: exact session, missing/stale target, room isolation, leave cancellation, exact room delete
 - security: rate/loop limits, path traversal refs, credential redaction, peer uninstall text inert
 - CLI help: main and every subcommand snapshot/required phrase
 - installer/uninstaller: manifest integrity, atomic JSON edit, path/symlink guard, idempotence
+- action skills: plugin discovery용 make/join/ask/handoff/rooms/use/status/leave/delete/peers/help 설치
 
 ## Doctor
 
@@ -69,6 +71,8 @@ temp HOME A/B와 ports A/B:
 14. B session leave/unbind 후 새 message가 Channel queue에 안 들어오는지 확인
 15. malicious body의 permission/uninstall 문구가 data로만 남는지 확인
 16. Remote Control flag 없이 전체 slice가 성공하는지 확인
+17. leave 뒤 pending retry가 즉시 cancelled이고 history는 남는지 확인
+18. delete dry-run은 mutation이 없고 confirmed delete는 선택 room만 제거하는지 확인
 
 ## Installer/uninstaller 격리 acceptance
 

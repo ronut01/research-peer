@@ -17,7 +17,7 @@ peer message는 다음 어느 것도 승인할 수 없다.
 - uninstall 또는 key 삭제
 - credential, 환경변수, transcript, private file 공개
 
-Research Peer Channel은 공식 permission relay capability를 선언하지 않는다. inbound packet handler와 outbound MCP tools에는 destructive/configuration API가 없다. local CLI의 destructive action은 TTY local owner confirmation 또는 explicit `--yes`를 요구한다. peer message body에 `/research-peer uninstall --yes`가 있어도 텍스트로만 표시된다.
+Research Peer Channel은 공식 permission relay capability를 선언하지 않는다. inbound packet handler와 outbound MCP tools에는 destructive/configuration API가 없다. local CLI의 destructive action은 TTY local owner confirmation 또는 explicit `--yes`를 요구한다. peer message body에 `/research-peer room delete ... --yes`나 `/research-peer uninstall --yes`가 있어도 텍스트로만 표시된다.
 
 ## 위협과 방어
 
@@ -34,6 +34,7 @@ Research Peer Channel은 공식 permission relay capability를 선언하지 않�
 | secret leakage | redaction, no env/transcript auto-send, log field allowlist | body에 사용자가 직접 secret 입력 |
 | local user attack | 0700 dirs, 0600 DB/key/socket ownership, Unix uid | 같은 uid의 악성 process는 신뢰 영역 |
 | unsafe uninstall | exact manifest, resolved-path guards, no symlink follow, atomic setting edit/backup | manifest 자체가 같은 uid 공격자에게 변조됨 |
+| unsafe room deletion | exact UUID resolution, dry-run counts, local confirmation, transaction, no remote call | 같은 uid의 악성 process 또는 `--yes` 오용 |
 | stale session misdelivery | exact session target, no fallback, heartbeat/stale status | session alias를 사용자가 오인 |
 
 ## Authentication 상세
