@@ -19,11 +19,11 @@ class HelpLauncherTests(unittest.TestCase):
     def test_main_help_has_required_actions_and_security(self) -> None:
         code, output = self.capture(["help"])
         self.assertEqual(0, code)
-        for phrase in ("Quick start", "/research-peer:make", "room create", "room delete", "Remote Control", "handoff", "uninstall", "untrusted", "logs"):
+        for phrase in ("Quick start", "/research-peer:make", "/research-peer:update", "room create", "room delete", "Remote Control", "handoff", "update", "uninstall", "untrusted", "logs"):
             self.assertIn(phrase, output)
 
     def test_subcommand_help(self) -> None:
-        for topic in ("doctor", "room", "uninstall"):
+        for topic in ("doctor", "room", "update", "uninstall"):
             code, output = self.capture(["help", topic])
             self.assertEqual(0, code)
             self.assertIn(topic, output.lower())
@@ -63,6 +63,18 @@ class HelpLauncherTests(unittest.TestCase):
         delete = build_parser().parse_args(["room", "delete", "toy", "--dry-run"])
         self.assertTrue(delete.dry_run)
         self.assertFalse(delete.yes)
+
+    def test_internal_transport_commands_are_hidden(self) -> None:
+        from research_peer.cli import build_parser
+
+        output = io.StringIO()
+        with self.assertRaises(SystemExit), contextlib.redirect_stdout(output):
+            build_parser().parse_args(["--help"])
+        rendered = output.getvalue()
+        for hidden in ("_ingest", "receive", "answer"):
+            self.assertNotIn(hidden, rendered)
+        self.assertNotIn("==SUPPRESS==", rendered)
+        self.assertIn("inbox", rendered)
 
 
 if __name__ == "__main__":

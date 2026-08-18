@@ -11,7 +11,7 @@
 
 - Ubuntu 22.04.5 LTS (Jammy), kernel `6.8.0-136-generic`, `x86_64`
 - hostname, Unix user, uid/gid는 public repository에서 redacted. shell `/bin/bash`, home은 `$HOME`으로 표기한다.
-- passwordless `sudo -n` 불가; v1은 sudo를 요구하지 않는다.
+- passwordless `sudo -n` 불가; Research Peer는 sudo를 요구하지 않는다.
 - build workspace는 writable했다. 구현 sandbox에서는 home write가 제한됐지만 승인된 user-scope 설치는 실제 `$HOME`에서 성공했다.
 - filesystem ext4, 916 GiB 중 약 92% 사용, 약 72 GiB available. `quota` command는 설치되지 않아 per-user quota는 확인 불가.
 - Git 2.34.1. 최초 build workspace는 writable Git metadata가 제공되지 않아 public publication은 sanitized staging checkout에서 수행했다.
@@ -50,7 +50,7 @@
 - hidden `--channels`와 `--dangerously-load-development-channels`를 `--version`과 함께 실행해 이 binary가 두 option을 parse함을 확인했다.
 - system managed settings의 일반 Linux 경로에서 Research Peer가 확인한 파일은 없었다. 현재 로그인에서는 실제 development Channel session 두 개가 시작됐으므로 이 계정에 대한 Channel startup 차단은 관찰되지 않았다. 다른 조직 정책은 별도다.
 - `/research-peer`는 `~/.claude/skills/research-peer/SKILL.md` personal skill로, Channel/MCP는 `.claude-plugin/plugin.json`이 있는 skills-directory plugin으로 제공한다.
-- 실제 plugin inventory가 `.mcp.json`의 Channel server 1개와 12개 skill(research-peer overview + make/join/ask/handoff/rooms/use/status/leave/delete/peers/help)을 발견했다. interactive `/mcp`에서 connected/2 tools로 표시됐고 실제 `/research-peer help`도 plain command로 실행됐다.
+- **[SERVER-VERIFIED]** 1.1 설치 당시 실제 plugin inventory가 `.mcp.json`의 Channel server 1개와 12개 skill을 발견했고 interactive `/mcp`에서 connected/2 tools로 표시됐다. 2.0 source는 `auto-answer`를 더한 13개 skill과 3개 MCP tool이며 local automated validation은 통과했지만 실제 user install inventory는 아직 재검증하지 않았다.
 
 ## 공식 문서로 확인한 외부 기능
 
@@ -74,7 +74,7 @@
 
 ## 구현 후 현재 설치 상태
 
-- **[SERVER-VERIFIED]** Research Peer 1.1.0을 user scope에 설치하고 user daemon을 재시작했다. 기존 identity fingerprint는 유지됐고 room/peer/outbox는 0이었다.
+- **[SERVER-VERIFIED]** Research Peer 1.1.0을 user scope에 설치하고 user daemon을 재시작했다. 기존 identity fingerprint는 유지됐고 room/peer/outbox는 0이었다. 이 항목은 historical installed-state evidence이며 2.0 source update가 reinstall 권한을 의미하지 않는다.
 - CLI, personal skill, skills-directory plugin, user service, XDG config/state/cache, install manifest가 생성됐다.
 - user service는 enabled이며 smoke 동안 systemd user mode로 시작해 loopback port에 bind한 뒤 중지했다. 최종 상태는 inactive/stopped다.
 - 실제 기본 `research-peer uninstall --dry-run`이 program owned entry와 config/state/cache/runtime의 exact removal plan을 표시했으며 mutation은 없었다.

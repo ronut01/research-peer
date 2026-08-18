@@ -159,6 +159,78 @@ class IdentityStoreTests(unittest.TestCase):
             store.receive(status, identity.fingerprint, "rate-limit-abcdefghijklmnop")
         store.close()
 
+    def test_broadcast_selects_latest_session_and_inbox_remains_readable(self) -> None:
+        store = Store(self.paths.db_file)
+        room = str(uuid.uuid4())
+        store.create_room(room, "shared")
+        identity = Identity.load_or_create(self.paths, "alice")
+        first, second = str(uuid.uuid4()), str(uuid.uuid4())
+        store.register_session(first, "first", "alice", room)
+        store.register_session(second, "second", "alice", room)
+        envelope = new_envelope(
+            room_id=room, message_type="QUESTION", from_user="bob", from_session="peer",
+            to_user="alice", to_session="", body={"text": "visible?"},
+        )
+        self.assertTrue(store.receive(envelope, identity.fingerprint, "broadcast-nonce-abcdefghijkl"))
+        self.assertEqual([], store.poll_session(first))
+        self.assertEqual(envelope["message_id"], store.poll_session(second)[0]["message_id"])
+        inbox = store.inbox(room_id=room, include_all=True)
+        self.assertEqual("visible?", inbox[0]["body"]["text"])
+        self.assertEqual("consumed", inbox[0]["state"])
+        store.close()
+
+    def test_register_claims_waiting_message_and_retires_same_alias(self) -> None:
+        store = Store(self.paths.db_file)
+        room = str(uuid.uuid4())
+        store.create_room(room, "late")
+        identity = Identity.load_or_create(self.paths, "alice")
+        envelope = new_envelope(
+            room_id=room, message_type="STATUS", from_user="bob", from_session="peer",
+            to_user="alice", to_session="worker", body={"text": "waiting"},
+        )
+        store.receive(envelope, identity.fingerprint, "waiting-nonce-abcdefghijklmnop")
+        self.assertEqual("no_target_session", store.inbox()[0]["state"])
+        first, second = str(uuid.uuid4()), str(uuid.uuid4())
+        store.register_session(first, "worker", "alice", room)
+        store.register_session(second, "worker", "alice", room)
+        sessions = {item["session_id"]: item for item in store.list_sessions()}
+        self.assertFalse(bool(sessions[first]["active"]))
+        self.assertTrue(bool(sessions[second]["active"]))
+        self.assertEqual(envelope["message_id"], store.poll_session(second)[0]["message_id"])
+        store.close()
+
+    def test_auto_answer_policy_is_terminal_and_idempotent(self) -> None:
+        store = Store(self.paths.db_file)
+        room = str(uuid.uuid4())
+        store.create_room(room, "auto")
+        identity = Identity.load_or_create(self.paths, "alice")
+        peer_id = str(uuid.uuid4())
+        store.add_peer(
+            peer_id=peer_id, user_name="bob", fingerprint=identity.fingerprint,
+            tls_fingerprint=identity.tls_fingerprint, certificate=cert_pem(identity.cert_path),
+            endpoint="127.0.0.1:50001", room_id=room,
+        )
+        question = new_envelope(
+            room_id=room, message_type="QUESTION", from_user="bob", from_session="peer",
+            to_user="alice", to_session="", body={"text": "status?"}, automation_depth=1,
+        )
+        store.receive(question, identity.fingerprint, "auto-question-nonce-abcdefghijkl")
+        with self.assertRaisesRegex(PermissionError, "disabled"):
+            store.auto_answer_context(question["message_id"])
+        store.configure_room(room, auto_answer=True, disclosure="summary", note="v2 in progress")
+        context = store.auto_answer_context(question["message_id"])
+        answer = new_envelope(
+            room_id=room, message_type="ANSWER", from_user="alice", from_session="agent",
+            to_user="bob", to_session="peer", body={"text": context["note"]},
+            request_id=context["request_id"], automation_depth=context["incoming_depth"] + 1,
+        )
+        store.enqueue_auto_answer(
+            answer, peer_id, question_message_id=question["message_id"], disclosure="summary",
+        )
+        with self.assertRaisesRegex(ValueError, "already"):
+            store.auto_answer_context(question["message_id"])
+        store.close()
+
 
 if __name__ == "__main__":
     unittest.main()

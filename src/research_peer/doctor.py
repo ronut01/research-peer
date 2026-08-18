@@ -15,6 +15,7 @@ from typing import Any
 
 from . import PROTOCOL_VERSION, __version__
 from .identity import client_tls_context, fingerprint_peer_der
+from .paths import Paths, load_config
 
 
 def _command(args: list[str], timeout: float = 5.0) -> tuple[int, str]:
@@ -182,6 +183,78 @@ def _ssh_target_check(target: str | None) -> dict[str, Any]:
     return result
 
 
+def configured_listener_check() -> dict[str, Any]:
+    paths = Paths.discover()
+    config = load_config(paths)
+    configured = f"{config['listen_host']}:{config['listen_port']}"
+    ready_path = paths.runtime_dir / "daemon.ready"
+    running = False
+    if paths.pid_file.exists():
+        try:
+            pid = int(paths.pid_file.read_text().strip())
+            os.kill(pid, 0)
+            running = True
+        except (OSError, ValueError):
+            pass
+    if not running:
+        return {
+            "name": "configured_listener", "status": "not_tested",
+            "code": "DAEMON_NOT_RUNNING", "configured": configured,
+        }
+    try:
+        ready = json.loads(ready_path.read_text())
+        actual = f"{ready['host']}:{ready['port']}"
+    except (OSError, ValueError, KeyError, TypeError):
+        return {
+            "name": "configured_listener", "status": "fail",
+            "code": "LISTENER_STATE_UNKNOWN", "configured": configured,
+        }
+    if actual != configured:
+        return {
+            "name": "configured_listener", "status": "fail",
+            "code": "LISTENER_CONFIG_MISMATCH", "configured": configured,
+            "actual": actual,
+            "remediation": "run research-peer stop && research-peer start",
+        }
+    return {
+        "name": "configured_listener", "status": "pass",
+        "code": "LISTENER_CONFIG_OK", "configured": configured, "actual": actual,
+    }
+
+
+def firewall_heuristic() -> dict[str, Any]:
+    ufw_enabled = False
+    default_drop = False
+    try:
+        ufw_enabled = "ENABLED=yes" in Path("/etc/ufw/ufw.conf").read_text(errors="replace")
+    except OSError:
+        pass
+    try:
+        default_drop = 'DEFAULT_INPUT_POLICY="DROP"' in Path("/etc/default/ufw").read_text(errors="replace")
+    except OSError:
+        pass
+    active_services = []
+    for service in ("ufw", "firewalld", "nftables"):
+        code, _ = _command(["systemctl", "is-active", "--quiet", service], timeout=2)
+        if code == 0:
+            active_services.append(service)
+    likely_blocked = ufw_enabled and default_drop
+    result: dict[str, Any] = {
+        "status": "warn" if likely_blocked else "pass",
+        "code": "INBOUND_DEFAULT_DROP_LIKELY" if likely_blocked else "NO_DEFAULT_DROP_DETECTED",
+        "ufw_enabled": ufw_enabled,
+        "default_input_drop": default_drop,
+        "active_services": active_services,
+    }
+    if likely_blocked:
+        result["remediation"] = (
+            "use an already-authorized port or an owner-approved SSH tunnel; "
+            "for restricted keys use an explicit reverse bind: "
+            "-R 127.0.0.1:REMOTE_PORT:127.0.0.1:LOCAL_PORT"
+        )
+    return result
+
+
 def _authenticated_check(peer_endpoint: str, room_value: str) -> dict[str, Any]:
     try:
         from .identity import Identity
@@ -256,7 +329,8 @@ def run_doctor(
             "remote_control_eligibility": "run claude doctor / opt-in session to verify",
         },
         "ssh": ssh,
-        "local_connectivity": local_network_checks(),
+        "local_connectivity": [*local_network_checks(), configured_listener_check()],
+        "firewall": firewall_heuristic(),
         "peer": peer_result,
         "peer_authentication": auth_result,
         "transport_assessment": assessment,

@@ -143,6 +143,8 @@ def validate_envelope(
         raise ProtocolError("TIMESTAMP_INVALID", "message timestamp outside allowed clock skew")
     if not isinstance(envelope.get("reply_required"), bool) or not isinstance(envelope.get("owner_attention"), bool):
         raise ProtocolError("SCHEMA_INVALID", "reply_required and owner_attention must be booleans")
+    if message_type != "QUESTION" and envelope["reply_required"]:
+        raise ProtocolError("SCHEMA_INVALID", "only QUESTION may require a reply")
     body = envelope.get("body")
     if not isinstance(body, Mapping):
         raise ProtocolError("SCHEMA_INVALID", "body must be an object")
@@ -210,4 +212,3 @@ def decode_urlsafe(value: str) -> dict[str, Any]:
 
 def valid_meta_key(value: str) -> bool:
     return bool(_META_ID_RE.fullmatch(value))
-

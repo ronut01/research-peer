@@ -5,6 +5,7 @@ import os
 import subprocess
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +45,7 @@ class RoomDeleteCliTests(unittest.TestCase):
         return json.loads(result.stdout)
 
     def test_make_dry_run_noninteractive_guard_and_confirmed_delete(self) -> None:
-        created = self.cli("room", "make", "toy")
+        created = self.cli("room", "make", "toy", "--advertise-loopback")
         room_id = created["room_id"]
         plan = self.cli("room", "delete", "toy", "--dry-run")
         self.assertEqual(room_id, plan["room_id"])
@@ -60,6 +61,18 @@ class RoomDeleteCliTests(unittest.TestCase):
         objects = self._json_objects(deleted.stdout)
         self.assertEqual(room_id, objects[-1]["deleted"])
         self.assertEqual([], self.cli("room", "list"))
+
+    def test_session_register_uses_launcher_environment(self) -> None:
+        created = self.cli("room", "make", "bound", "--advertise-loopback")
+        session_id = str(uuid.uuid4())
+        self.env["RESEARCH_PEER_SESSION_ID"] = session_id
+        registered = self.cli(
+            "session", "register", "--alias", "research-peer", "--room", created["room_id"],
+        )
+        self.assertEqual(session_id, registered["session_id"])
+        self.assertNotIn("warning", registered)
+        sessions = self.cli("session", "list")
+        self.assertTrue(sessions[0]["current"])
 
     @staticmethod
     def _json_objects(text: str) -> list[dict]:

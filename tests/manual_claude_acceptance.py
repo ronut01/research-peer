@@ -51,8 +51,14 @@ def prepare(info_path: Path) -> None:
     cli(env_b, "init", "--listen", f"127.0.0.1:{port_b}")
     cli(env_a, "start", "--daemon-only", "--listen", f"127.0.0.1:{port_a}")
     cli(env_b, "start", "--daemon-only", "--listen", f"127.0.0.1:{port_b}")
-    created = cli(env_a, "room", "create", "claude-live", "--endpoint", f"127.0.0.1:{port_a}")
-    cli(env_b, "room", "join", created["invite"], "--endpoint", f"127.0.0.1:{port_b}")
+    created = cli(
+        env_a, "room", "create", "claude-live", "--endpoint", f"127.0.0.1:{port_a}",
+        "--advertise-loopback",
+    )
+    cli(
+        env_b, "room", "join", created["invite"], "--endpoint", f"127.0.0.1:{port_b}",
+        "--advertise-loopback",
+    )
     session_a, session_b = str(uuid.uuid4()), str(uuid.uuid4())
     cli(env_a, "session", "register", "--session-id", session_a, "--alias", "claude-a", "--room", created["room_id"])
     cli(env_b, "session", "register", "--session-id", session_b, "--alias", "claude-b", "--room", created["room_id"])

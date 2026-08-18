@@ -35,9 +35,10 @@ research-peer uninstall --dry-run
 
 Expected essentials:
 
-- `research-peer version` and `rp version` both report version `1.1.0`
+- `research-peer version` and `rp version` both report version `2.0.0`
 - local bind, loopback, and Unix socket checks pass where the sandbox permits them
-- Claude plugin inventory contains MCP server `channel`
+- Claude plugin inventory contains MCP server `channel`, 14 skills, and 3 safe tools (`research_peer_send`, `research_peer_answer`, `research_peer_status`)
+- `/research-peer:update` exists and `research-peer help update` names only the fixed official GitHub source; do not perform a network update merely to verify installation
 - plain personal skill exists at `~/.claude/skills/research-peer/SKILL.md`
 - uninstall dry-run lists only Research Peer-owned paths and preserves repositories, experiment artifacts, unrelated Claude settings, and remote peer data
 

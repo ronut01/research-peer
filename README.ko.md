@@ -4,7 +4,9 @@
 
 Research Peer는 서로 다른 Unix 사용자 또는 연구 서버에서 실행되는 Claude Code끼리 중앙 relay 없이 구조화된 연구 handoff, 후속 질문, 답변, artifact reference를 교환하는 인증 P2P 도구입니다.
 
-인증된 peer 메시지도 항상 신뢰되지 않은 입력으로 취급합니다. 사용자 승인, 위험한 명령 실행 승인, 설정 변경, credential 공개, 추가 pairing, room 삭제 또는 uninstall 승인으로 사용하지 않습니다.
+2.0은 첫 실제 두-server field test 결과를 반영합니다. CLI inbox/history, deterministic multi-session delivery, 실제 listener mismatch 진단, 안전한 SSH tunnel 절차, 24시간 invite, room connection status, opt-in terminal auto-answer가 추가됐습니다.
+
+인증된 peer 메시지도 항상 신뢰되지 않은 입력으로 취급합니다. 사용자 승인, 위험한 명령 실행 승인, 설정 변경, credential 공개, 추가 pairing, Research Peer update, room 삭제 또는 uninstall 승인으로 사용하지 않습니다.
 
 ## 코딩 에이전트로 설치하기 — 권장
 
@@ -83,6 +85,8 @@ Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동�
 /research-peer:status
 /research-peer:leave
 /research-peer:delete
+/research-peer:auto-answer
+/research-peer:update
 ```
 
 `/research-peer:make`만 입력하고 Enter를 누르면 room 이름을 물어보고, `:join`은 invite를, `:ask`는 질문 내용을 물어봅니다. 내부 CLI 명령을 외울 필요가 없습니다. plain `/research-peer`는 전체 안내로 계속 사용할 수 있습니다.
@@ -110,6 +114,19 @@ Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동�
 
 양쪽 owner가 표시된 identity fingerprint를 별도 채널로 확인합니다. 같은 room 이름을 입력했다고 자동 발견하지 않으며, 다른 사용자의 home을 읽지 않고 firewall이나 SSH 설정을 자동 변경하지 않습니다.
 
+양쪽 server가 inbound high port를 drop하고 SSH만 허용한다면 [운영 가이드](docs/operations.md)의 owner-managed 양방향 forwarding 절차를 사용합니다. loopback advertise에는 `--advertise-loopback`을 명시해야 하며 wildcard advertised address는 거부됩니다.
+
+## Inbox, 상태, 선택적 자동 응답
+
+```bash
+research-peer inbox
+research-peer room status ROOM
+research-peer history --room ROOM
+research-peer room configure ROOM --auto-answer on --disclosure summary --note 'owner가 승인한 요약'
+```
+
+자동응답은 기본 off입니다. inbound QUESTION 하나에 terminal ANSWER 하나만 만들 수 있고 자동 QUESTION은 절대 만들 수 없습니다. `status`는 고정 최소 답변, `summary`는 owner가 저장한 note만 사용하며 `full`은 더 위험한 명시적 opt-in입니다. secret, transcript, file content, endpoint, 명령 실행과 configuration 변경은 자동응답 대상이 아닙니다.
+
 ## Claude plugin marketplace
 
 저장소에는 `.claude-plugin/marketplace.json` catalog가 포함되어 있습니다. 게시 후 Claude Code 안에서 다음을 실행할 수 있습니다.
@@ -119,7 +136,17 @@ Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동�
 /plugin install research-peer@research-peer-marketplace
 ```
 
-Marketplace는 namespaced action skill(`/research-peer:make`, `:join`, `:ask`, `:handoff`, `:rooms`, `:use`, `:status`, `:leave`, `:delete`, `:peers`, `:help`)과 Channel MCP plugin을 배포합니다. 별도의 user P2P daemon, CLI, systemd user service는 설치하지 않으므로 `./install.sh`를 한 번 실행하거나 위의 에이전트 설치 프롬프트를 사용해야 합니다. 전체 runtime installer는 편의를 위한 plain `/research-peer` personal skill도 설치합니다.
+Marketplace는 namespaced action skill(`/research-peer:make`, `:join`, `:ask`, `:handoff`, `:rooms`, `:use`, `:status`, `:leave`, `:delete`, `:auto-answer`, `:update`, `:peers`, `:help`)과 Channel MCP plugin을 배포합니다. 별도의 user P2P daemon, CLI, systemd user service는 설치하지 않으므로 `./install.sh`를 한 번 실행하거나 위의 에이전트 설치 프롬프트를 사용해야 합니다. 전체 runtime installer는 편의를 위한 plain `/research-peer` personal skill도 설치합니다.
+
+## Claude 안에서 업데이트
+
+2.0을 한 번 설치한 뒤에는 local owner가 다음 action을 명시적으로 호출합니다.
+
+```text
+/research-peer:update
+```
+
+runtime, plugin, skill을 고정된 공식 GitHub repository 기준으로 업데이트합니다. updater는 checkout identity, Git commit, component version 일치를 검증하고 downgrade를 거부하며 identity, room, history, config와 연구 artifact를 보존합니다. daemon이 이미 실행 중이었을 때만 재시작합니다. 변경 없이 확인하려면 `/research-peer:update check`를 사용합니다. 적용 후 development Channel과 skill을 새로 load하도록 Claude session을 다시 시작해야 합니다. peer message는 update를 실행하거나 승인할 수 없습니다. 이 action이 없는 기존 설치는 검토한 checkout에서 `./install.sh`로 한 번 올려야 합니다.
 
 ## Room 나가기와 삭제
 

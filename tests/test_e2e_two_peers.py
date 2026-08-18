@@ -74,8 +74,14 @@ class TwoPeerE2E(unittest.TestCase):
         return json.loads(result.stdout)
 
     def pair_room(self, name: str = "retrieval-toy") -> tuple[str, str]:
-        created = self.cli(self.env_a, "room", "create", name, "--endpoint", f"127.0.0.1:{self.port_a}")
-        joined = self.cli(self.env_b, "room", "join", created["invite"], "--endpoint", f"127.0.0.1:{self.port_b}")
+        created = self.cli(
+            self.env_a, "room", "create", name, "--endpoint", f"127.0.0.1:{self.port_a}",
+            "--advertise-loopback",
+        )
+        joined = self.cli(
+            self.env_b, "room", "join", created["invite"], "--endpoint", f"127.0.0.1:{self.port_b}",
+            "--advertise-loopback",
+        )
         self.assertEqual(created["room_id"], joined["room_id"])
         return created["room_id"], created["invite"]
 
@@ -121,6 +127,39 @@ class TwoPeerE2E(unittest.TestCase):
         )
         inbound_answer = self.cli(self.env_b, "session", "poll", "--session-id", session_b, "--json")[0]
         self.assertEqual(question["request_id"], inbound_answer["request_id"])
+
+        self.cli(
+            self.env_a, "room", "configure", room_id, "--auto-answer", "on",
+            "--disclosure", "summary", "--note", "v2 in progress",
+        )
+        auto_question = self.cli(
+            self.env_b, "send", "--room", room_id, "--type", "QUESTION",
+            "--from-session", "followup", "--to-session", "toy-baseline",
+            "--text", "What are you working on?",
+        )
+        inbox = self.cli(self.env_a, "inbox", "--room", room_id)
+        pending_question = next(
+            item for item in inbox if item["request_id"] == auto_question["request_id"]
+        )
+        auto_answer = self.cli(
+            self.env_a, "answer", "--message-id", pending_question["message_id"],
+        )
+        self.assertEqual("summary", auto_answer["disclosure"])
+        self.assertEqual(1, auto_answer["automation_depth"])
+        received_auto = self.cli(
+            self.env_b, "session", "poll", "--session-id", session_b, "--json",
+        )[0]
+        self.assertEqual("ANSWER", received_auto["type"])
+        self.assertEqual("v2 in progress", received_auto["body"]["text"])
+        duplicate = self.raw_cli(
+            self.env_a, "answer", "--message-id", pending_question["message_id"],
+        )
+        self.assertEqual(2, duplicate.returncode)
+        self.assertIn("already been auto-answered", duplicate.stderr)
+        audit = self.cli(self.env_a, "history", "--room", room_id)
+        audited = next(item for item in audit if item["message_id"] == auto_answer["message_id"])
+        self.assertTrue(audited["automated"])
+        self.assertEqual("summary", audited["disclosure"])
 
         self.cli(self.env_b, "stop")
         pending = self.cli(
