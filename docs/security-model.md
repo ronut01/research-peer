@@ -85,6 +85,8 @@ HANDOFF artifact는 reference만 자동 처리한다. local file을 전송하려
 - stale PID가 가리키는 process command/uid가 Research Peer인지 확인 전 signal 금지
 - temp file은 same directory에서 secure mode로 만들고 fsync+atomic replace
 
+`/research-peer:make`와 `/research-peer:join`은 명시적으로 호출한 local owner를 대신해 Research Peer config와 daemon을 맞출 수 있다. local interface와 free high port는 읽기 전용 검사로 후보를 찾되 remote reachability를 단정하지 않는다. firewall, SSH key/configuration, `authorized_keys`, sshd와 remote file은 변경하지 않는다. 새 SSH connection을 열기 전에는 target과 forwarding 범위를 보여주고 별도 owner 승인을 받는다.
+
 ## Claude와 Remote Control 경계
 
 **[OFFICIAL]** Channel event는 `<channel source=...>`로 표시되지만 model context에 들어가는 untrusted text다. Research Peer는 `untrusted_peer_input=true`를 추가하고 system instructions에 owner-approval 금지를 명시한다. Channel 처리/응답을 transport ACK로 오해하지 않는다.
@@ -93,7 +95,7 @@ Remote Control은 Anthropic service와 자기 claude.ai account 사이의 별도
 
 ## 자동 응답 경계
 
-Auto-answer setting 변경은 local CLI/owner-invoked skill만 수행하며 MCP tool에는 config capability가 없다. 기본은 off다. Channel의 dedicated answer tool은 inbound message ID를 받아 다음을 local store에서 재검증한다: QUESTION, `reply_required=true`, `owner_attention=false`, room opt-in, disclosure not `none`, unanswered request ID, depth cap, exactly one peer. 이 tool은 ANSWER 외 type을 선택할 수 없다.
+Auto-answer setting 변경은 local CLI/owner-invoked skill만 수행하며 MCP tool에는 config capability가 없다. 기본은 off고 daemon 단독 기능이 아니므로 Research Peer-enabled Claude session이 실행 중이어야 한다. Channel의 dedicated answer tool은 inbound message ID를 받아 다음을 local store에서 재검증한다: QUESTION, `reply_required=true`, `owner_attention=false`, room opt-in, disclosure not `none`, unanswered request ID, depth cap, exactly one peer. 이 tool은 ANSWER 외 type을 선택할 수 없다.
 
 `status`는 고정 응답, `summary`는 owner-authored note만 사용한다. `full`은 model-generated text를 허용하므로 명시적 고위험 opt-in이며 prompt-injection/과다공개의 잔여 위험이 있다. 어느 수준에서도 credential, 환경변수, transcript, private file 내용, invite token, private endpoint, `~/.ssh`, command/config mutation을 자동으로 제공하지 않는다. tool은 shell/file/config capability를 가지지 않으며 policy 밖 질문은 owner에게 escalation한다.
 

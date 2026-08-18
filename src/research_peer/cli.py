@@ -36,7 +36,9 @@ Quick start:
 
 Then type `/research-peer:` inside Claude to see autocomplete-style actions such
 as `make`, `join`, `ask`, `leave`, and `delete`. If an action needs a value and
-you press Enter without one, Claude asks for it. The plain `/research-peer`
+you press Enter without one, Claude asks and continues from your reply. Guided
+`make`/`join` configure and reconcile the endpoint and daemon for you; no prior
+`init` or hand-written `--endpoint` is required. The plain `/research-peer`
 overview remains available. If exactly one active room exists, it is selected.
 
 Claude slash actions:
@@ -138,6 +140,11 @@ firewall, SSH key, or another user's settings.
 Room display names may repeat; UUIDs never do. Creation emits a sensitive,
 one-time invite valid for 24 hours by default. Exchange it through an existing secure channel and
 confirm the fingerprints with the peer. Same room names do not discover peers.
+
+Normal Claude use starts with `rp`, then `/research-peer:make` or
+`/research-peer:join`. Those guided actions ask for unknown values, reconcile the
+daemon, and construct the endpoint-bearing CLI command. The explicit commands
+above remain available for advanced/manual operation.
 
 Wildcard addresses cannot be advertised. Loopback requires --advertise-loopback
 and is only for an already-established SSH tunnel. `init --listen` reports a

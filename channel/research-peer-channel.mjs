@@ -33,7 +33,7 @@ function runCli(args, input = null) {
 }
 
 const mcp = new Server(
-  { name: 'research-peer', version: '2.0.0' },
+  { name: 'research-peer', version: '2.0.1' },
   {
     capabilities: channelCapabilities(),
     instructions: [

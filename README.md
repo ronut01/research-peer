@@ -4,7 +4,7 @@
 
 Research Peer is an authenticated peer-to-peer research handoff tool for Claude Code. It lets Claude Code sessions owned by different Unix users or running on different research servers exchange structured experiment handoffs, follow-up questions, answers, and artifact references without a central relay.
 
-Version 2.0 incorporates the first real two-server field test: a readable CLI inbox/history, deterministic multi-session delivery, live-listener mismatch diagnostics, safe SSH-tunnel onboarding, 24-hour invites, room connection status, and opt-in policy-limited terminal auto-answers.
+Version 2.0 incorporates the first real two-server field test: a readable CLI inbox/history, deterministic multi-session delivery, live-listener mismatch diagnostics, safe SSH-tunnel onboarding, 24-hour invites, room connection status, and opt-in policy-limited terminal auto-answers. Version 2.0.1 makes first pairing conversational: `make` and `join` own endpoint setup, daemon reconciliation, CLI flags, and session binding.
 
 Peer messages are authenticated but always treated as untrusted input. They never count as local-owner permission to run dangerous commands, change configuration, expose credentials, pair another peer, update Research Peer, delete a room, or uninstall Research Peer.
 
@@ -92,7 +92,7 @@ Inside Claude Code, type `/research-peer:` to get autocomplete-style actions:
 /research-peer:update
 ```
 
-Pressing Enter on `/research-peer:make` asks for the room name; `/research-peer:join` asks for the invite; `/research-peer:ask` asks for the question. You do not need to memorize the underlying CLI. The plain `/research-peer` overview remains available.
+Pressing Enter on `/research-peer:make` asks for the room name; `/research-peer:join` asks for the invite; `/research-peer:ask` asks for the question. The answer continues the same onboarding flow—there is no need to invoke the slash command again. `make` and `join` inspect the daemon and network, ask one question at a time only for values they cannot safely infer, configure/restart the daemon when needed, and supply `--endpoint` and tunnel flags themselves. Start with `rp`; no endpoint or daemon setup is required beforehand. The plain `/research-peer` overview remains available.
 
 When exactly one active room exists, Research Peer selects it automatically. After pairing, use natural language:
 
@@ -103,7 +103,7 @@ experiment. When the answer arrives, connect it to my current follow-up task.
 
 ## Two-person setup
 
-Both researchers install Research Peer in their own Unix accounts and run `rp` (or `research-peer`). The first researcher creates a room inside Claude:
+Both researchers install Research Peer in their own Unix accounts and run `rp` (or `research-peer`). They do not run `init` or prepare a daemon first. The first researcher creates a room inside Claude:
 
 ```text
 /research-peer:make retrieval-toy
@@ -115,7 +115,7 @@ They send the one-time invite through an existing trusted channel. The second re
 /research-peer:join <invite-code>
 ```
 
-Both owners verify the displayed identity fingerprints out of band. Research Peer never assumes that matching room names discover each other, never reads another user's home directory, and never changes firewall or SSH settings automatically.
+During either action Claude asks whether the path is direct private/VPN TCP or an approved SSH tunnel, then asks only for unresolved address, port, or SSH values. It runs the resulting endpoint-bearing room command itself. Both owners verify the displayed identity fingerprints out of band. Research Peer never assumes that matching room names discover each other, never reads another user's home directory, and never changes firewall or SSH settings automatically.
 
 If both servers drop inbound high ports but allow SSH, use the owner-managed bidirectional forwarding recipe in [Operations](docs/operations.md). Loopback endpoints require the explicit `--advertise-loopback` flag, and wildcard advertised addresses are rejected.
 
@@ -128,7 +128,7 @@ research-peer history --room ROOM
 research-peer room configure ROOM --auto-answer on --disclosure summary --note 'Owner-approved summary'
 ```
 
-Auto-answer is off by default. It can emit one terminal `ANSWER` only for an inbound `QUESTION`; it can never automatically emit a new `QUESTION`. `status` uses a fixed minimal reply, `summary` uses only the owner's saved note, and `full` is a higher-risk explicit opt-in. Secrets, transcripts, file contents, endpoints, command execution, and configuration changes are never auto-answerable.
+Auto-answer is off by default, and `make`/`join` offer to configure it after pairing. It works only while a Research Peer-enabled Claude session is running; the daemon alone cannot generate model answers. It can emit one terminal `ANSWER` only for an inbound `QUESTION`; it can never automatically emit a new `QUESTION`. `status` uses a fixed minimal reply, `summary` uses only the owner's saved note, and `full` is a higher-risk explicit opt-in. Secrets, transcripts, file contents, endpoints, command execution, and configuration changes are never auto-answerable.
 
 ## Claude plugin marketplace
 

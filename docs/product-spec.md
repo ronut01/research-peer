@@ -40,7 +40,7 @@ Research Peer는 서로 다른 Unix 사용자 또는 연구 서버에서 실행�
 - firewalled lab server용 owner-managed SSH tunnel 운영 절차와 firewall heuristic
 - 기본 off인 room별 terminal auto-answer, disclosure policy, request별 1회 audit
 
-2.0은 Codex adapter, 중앙 discovery/relay, 3명 이상 최적화, binary artifact 자동 복제, 전체 transcript 자동 공유, peer의 home 접근, 자동 firewall/SSH key 변경을 제공하지 않는다. `connect`/`verify`/`request-info` guided orchestration과 SSH tunnel process 관리는 후속 범위다. protocol, identity, room, transport, persistence, retry/outbox는 Claude Code에 의존하지 않으며 향후 adapter를 병렬 추가할 수 있어야 한다.
+2.0은 Codex adapter, 중앙 discovery/relay, 3명 이상 최적화, binary artifact 자동 복제, 전체 transcript 자동 공유, peer의 home 접근, 자동 firewall/SSH key 변경을 제공하지 않는다. 별도 `connect`/`verify`/`request-info` CLI와 Research Peer 자체의 SSH tunnel process 수명·key 관리는 후속 범위다. 다만 Claude의 `make`/`join` action skill은 첫 연결에 필요한 endpoint와 daemon 설정을 대화형으로 orchestration한다. protocol, identity, room, transport, persistence, retry/outbox는 Claude Code에 의존하지 않으며 향후 adapter를 병렬 추가할 수 있어야 한다.
 
 ## 핵심 사용자 경험
 
@@ -98,7 +98,7 @@ plain `/research-peer`는 overview/fallback이고, plugin action skill은 Claude
 /research-peer:help
 ```
 
-인자가 필요한 action을 인자 없이 실행하면 Claude가 필요한 값 하나를 물어본다. 특히 `make`는 room 이름, `join`은 invite, `ask`는 질문을 요청한다. 한 skill 내부의 두 번째 단어를 Claude slash menu가 완성한다고 가정하지 않고 각 action을 독립 plugin skill로 제공한다.
+인자가 필요한 action을 인자 없이 실행하면 Claude가 필요한 값 하나를 물어본 뒤 다음 local-owner 답변에서 같은 workflow를 이어간다. 특히 `make`는 room 이름, `join`은 invite, `ask`는 질문을 요청한다. `make`/`join`은 config와 live daemon listener를 검사하고 direct/VPN 또는 승인된 SSH tunnel 방식을 구분하며, 알 수 없는 address/port/SSH 값만 한 번에 하나씩 질문한다. 그 뒤 `init`, daemon start/restart, `--endpoint`, `--advertise-loopback`, room command와 session binding을 대신 실행한다. 사용자가 transport CLI를 조립하는 것은 정상 UX가 아니다. 한 skill 내부의 두 번째 단어를 Claude slash menu가 완성한다고 가정하지 않고 각 action을 독립 plugin skill로 제공한다.
 
 **[OFFICIAL]** personal skill은 `~/.claude/skills/research-peer/SKILL.md`로 `/research-peer`를 제공할 수 있다. plugin 안의 skill/tool에는 plugin scope/namespace가 붙는다. 따라서 personal skill은 얇은 stable UX이고, 별도 skills-directory plugin은 Channel/MCP server를 제공한다. peer가 보낸 inbound text는 skill, update 또는 uninstall을 호출할 local-owner 승인으로 간주하지 않는다.
 
@@ -200,7 +200,7 @@ artifact는 Git commit, 접근 가능한 URL, 공유 storage path, content hash,
 
 ## 2.0 terminal auto-answer
 
-Auto-answer는 room별로 기본 off다. local owner만 `room configure` 또는 `/research-peer:auto-answer`로 켤 수 있으며 peer text는 이 변경을 승인하지 못한다. 공개 수준은 `none | status | summary | full`이다.
+Auto-answer는 room별로 기본 off다. 연결이 끝난 `make`/`join`은 설정 여부를 물을 수 있지만 local owner만 `room configure` 또는 `/research-peer:auto-answer`로 켤 수 있으며 peer text는 이 변경을 승인하지 못한다. 자동 생성은 Research Peer Channel을 load한 Claude session이 실행 중일 때만 가능하고 daemon 단독으로 model 답변을 만들지 않는다. 공개 수준은 `none | status | summary | full`이다.
 
 - `status`: 고정된 최소 liveness 문장만 보낸다.
 - `summary`: owner가 미리 작성한 room note만 그대로 보낸다.

@@ -8,22 +8,13 @@
 research-peer
 ```
 
-이 명령이 Research Peer Channel을 활성화한 Claude Code를 연다. 활성 room이 정확히 하나면 자동 선택한다. 이후에는 Claude 안에서 `/research-peer:`를 입력해 `make`, `join`, `ask`, `handoff`, `rooms`, `use`, `status`, `leave`, `delete`, `auto-answer`, `update`, `peers`, `help`를 자동완성 목록처럼 고른다. `make`/`join`/`ask`에 인자가 없으면 Claude가 room 이름/invite/질문을 물어본다. 사용자가 `init`, `session register`, `send`, Channel flag를 기억하는 것을 정상 UX로 요구하지 않는다.
+이 명령이 Research Peer Channel을 활성화한 Claude Code와 daemon을 연다. 첫 실행의 임시/default listener를 사용자가 미리 설정할 필요는 없다. 활성 room이 정확히 하나면 자동 선택한다. 이후에는 Claude 안에서 `/research-peer:`를 입력해 `make`, `join`, `ask`, `handoff`, `rooms`, `use`, `status`, `leave`, `delete`, `auto-answer`, `update`, `peers`, `help`를 자동완성 목록처럼 고른다. `make`/`join`/`ask`에 인자가 없으면 Claude가 room 이름/invite/질문을 물어보고 다음 답변에서 같은 workflow를 이어간다. `make`/`join`이 필요한 address/port/SSH 값만 하나씩 묻고 config, daemon restart, endpoint option과 session binding을 맡는다. 사용자가 `init`, `session register`, `send`, `--endpoint`, `--advertise-loopback`, Channel flag를 기억하는 것을 정상 UX로 요구하지 않는다.
 
 Anthropic Channels는 session 시작 시 opt-in해야 하므로 이미 열린 일반 `claude` session에서 `/research-peer`만으로 inbound Channel을 동적으로 켤 수는 없다. 이때 skill은 복잡한 flag 대신 한 번 종료 후 `research-peer`로 다시 열라고 안내한다.
 
 현재 Research Peer는 custom development Channel이므로 Claude가 시작 시 local-development 경고를 표시한다. 사용자는 직접 Enter로 확인해야 한다. 공식/조직 allowlist에 승인되기 전까지 installer가 이 확인을 생략하거나 자동 승인하지 않는다.
 
-creator가 출력한 invite는 token이므로 public log/Git에 남기지 말고 기존 안전한 채널로 한 명에게 보낸다. joiner:
-
-```text
-research-peer init
-research-peer start --daemon-only --listen HOST:PORT
-research-peer room join 'INVITE' --endpoint HOST:PORT
-research-peer peer list
-```
-
-fingerprint/pairing code는 기존 voice/chat 등으로 양쪽 owner가 확인한다.
+creator가 출력한 invite는 token이므로 public log/Git에 남기지 말고 기존 안전한 채널로 한 명에게 보낸다. joiner는 `rp` 안에서 `/research-peer:join`을 실행하고 invite를 붙여 넣는다. Claude가 local endpoint를 구성하고 daemon을 맞춘 뒤 join command와 session binding을 실행한다. fingerprint/pairing code는 기존 voice/chat 등으로 양쪽 owner가 확인한다.
 
 ## 설치
 
@@ -178,7 +169,7 @@ tunnel이 실제로 열린 뒤에만 A는 `room make ... --endpoint 127.0.0.1:A_
 
 ## 제한된 자동 응답
 
-기본은 off다. 권장 순서는 고정 status, owner-authored summary, 마지막으로만 full이다.
+기본은 off다. `make`와 `join`은 연결 뒤 설정할지 물어보지만 owner가 선택하지 않으면 계속 off다. Research Peer Channel을 load한 Claude session이 실행 중이어야 하며 daemon 단독으로 model 답변을 생성하지 않는다. 권장 순서는 고정 status, owner-authored summary, 마지막으로만 full이다.
 
 ```text
 research-peer room configure ROOM --auto-answer on --disclosure status

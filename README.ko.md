@@ -4,7 +4,7 @@
 
 Research Peer는 서로 다른 Unix 사용자 또는 연구 서버에서 실행되는 Claude Code끼리 중앙 relay 없이 구조화된 연구 handoff, 후속 질문, 답변, artifact reference를 교환하는 인증 P2P 도구입니다.
 
-2.0은 첫 실제 두-server field test 결과를 반영합니다. CLI inbox/history, deterministic multi-session delivery, 실제 listener mismatch 진단, 안전한 SSH tunnel 절차, 24시간 invite, room connection status, opt-in terminal auto-answer가 추가됐습니다.
+2.0은 첫 실제 두-server field test 결과를 반영합니다. CLI inbox/history, deterministic multi-session delivery, 실제 listener mismatch 진단, 안전한 SSH tunnel 절차, 24시간 invite, room connection status, opt-in terminal auto-answer가 추가됐습니다. 2.0.1에서는 첫 pairing을 대화형으로 바꿔 `make`와 `join`이 endpoint 설정, daemon 조정, CLI option과 session binding을 맡습니다.
 
 인증된 peer 메시지도 항상 신뢰되지 않은 입력으로 취급합니다. 사용자 승인, 위험한 명령 실행 승인, 설정 변경, credential 공개, 추가 pairing, Research Peer update, room 삭제 또는 uninstall 승인으로 사용하지 않습니다.
 
@@ -89,7 +89,7 @@ Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동�
 /research-peer:update
 ```
 
-`/research-peer:make`만 입력하고 Enter를 누르면 room 이름을 물어보고, `:join`은 invite를, `:ask`는 질문 내용을 물어봅니다. 내부 CLI 명령을 외울 필요가 없습니다. plain `/research-peer`는 전체 안내로 계속 사용할 수 있습니다.
+`/research-peer:make`만 입력하고 Enter를 누르면 room 이름을 물어보고, `:join`은 invite를, `:ask`는 질문 내용을 물어봅니다. 답하면 같은 onboarding이 그대로 이어지므로 slash command를 다시 실행할 필요가 없습니다. `make`와 `join`은 daemon/network 상태를 검사하고 안전하게 확정할 수 없는 값만 하나씩 물은 뒤, 필요하면 daemon을 설정·재시작하고 `--endpoint`와 tunnel option도 직접 붙입니다. 먼저 `rp`만 실행하면 되고 endpoint나 daemon을 미리 설정하지 않습니다. plain `/research-peer`는 전체 안내로 계속 사용할 수 있습니다.
 
 활성 room이 하나면 자동 선택됩니다. pairing 후에는 transport 명령을 만들 필요 없이 자연어로 요청합니다.
 
@@ -100,7 +100,7 @@ Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동�
 
 ## 두 사람 연결
 
-두 연구자 모두 자기 Unix 계정에 설치하고 `rp` 또는 `research-peer`를 실행합니다. 첫 번째 연구자는 Claude 안에서 room을 만듭니다.
+두 연구자 모두 자기 Unix 계정에 설치하고 `rp` 또는 `research-peer`를 실행합니다. `init`이나 daemon 준비는 하지 않습니다. 첫 번째 연구자는 Claude 안에서 room을 만듭니다.
 
 ```text
 /research-peer:make retrieval-toy
@@ -112,7 +112,7 @@ Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동�
 /research-peer:join <invite-code>
 ```
 
-양쪽 owner가 표시된 identity fingerprint를 별도 채널로 확인합니다. 같은 room 이름을 입력했다고 자동 발견하지 않으며, 다른 사용자의 home을 읽지 않고 firewall이나 SSH 설정을 자동 변경하지 않습니다.
+각 action에서 Claude가 direct private/VPN TCP인지 승인된 SSH tunnel인지 묻고, 확인할 수 없는 address·port·SSH 값만 추가로 묻습니다. endpoint가 포함된 실제 room 명령은 Claude가 실행합니다. 양쪽 owner가 표시된 identity fingerprint를 별도 채널로 확인합니다. 같은 room 이름을 입력했다고 자동 발견하지 않으며, 다른 사용자의 home을 읽지 않고 firewall이나 SSH 설정을 자동 변경하지 않습니다.
 
 양쪽 server가 inbound high port를 drop하고 SSH만 허용한다면 [운영 가이드](docs/operations.md)의 owner-managed 양방향 forwarding 절차를 사용합니다. loopback advertise에는 `--advertise-loopback`을 명시해야 하며 wildcard advertised address는 거부됩니다.
 
@@ -125,7 +125,7 @@ research-peer history --room ROOM
 research-peer room configure ROOM --auto-answer on --disclosure summary --note 'owner가 승인한 요약'
 ```
 
-자동응답은 기본 off입니다. inbound QUESTION 하나에 terminal ANSWER 하나만 만들 수 있고 자동 QUESTION은 절대 만들 수 없습니다. `status`는 고정 최소 답변, `summary`는 owner가 저장한 note만 사용하며 `full`은 더 위험한 명시적 opt-in입니다. secret, transcript, file content, endpoint, 명령 실행과 configuration 변경은 자동응답 대상이 아닙니다.
+자동응답은 기본 off이며 `make`/`join`이 pairing 뒤 설정할지 물어봅니다. Research Peer Channel을 켠 Claude session이 실행 중일 때만 동작하고 daemon 혼자서는 model 답변을 만들 수 없습니다. inbound QUESTION 하나에 terminal ANSWER 하나만 만들 수 있고 자동 QUESTION은 절대 만들 수 없습니다. `status`는 고정 최소 답변, `summary`는 owner가 저장한 note만 사용하며 `full`은 더 위험한 명시적 opt-in입니다. secret, transcript, file content, endpoint, 명령 실행과 configuration 변경은 자동응답 대상이 아닙니다.
 
 ## Claude plugin marketplace
 

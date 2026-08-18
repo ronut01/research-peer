@@ -1,4 +1,4 @@
-# Research Peer 2.0 테스트 계획
+# Research Peer 2.0.1 테스트 계획
 
 ## 원칙
 
@@ -8,7 +8,7 @@
 
 ## 2026-08-18 실행 결과 요약
 
-- Python unittest: 39 tests pass (`rp` Remote Control dispatch, inbox/session routing, listener mismatch, terminal auto-answer, room delete/leave cleanup, installer/action-skill/updater, 2-peer loopback E2E 포함)
+- Python unittest: 42 tests pass (`rp` Remote Control dispatch, inbox/session routing, listener mismatch, terminal auto-answer, guided make/join skill contract, room delete/leave cleanup, installer/action-skill/updater, 2-peer loopback E2E 포함)
 - Node test: 4 tests pass, 실제 stdio MCP initialize/listTools handshake 포함
 - Ruff 0.12.9: pass
 - Python compileall: pass
@@ -21,7 +21,7 @@
 - actual plain `/research-peer help` personal skill invocation: pass
 - actual no-argument `research-peer` TTY launch and development-Channel startup: pass
 - **[SERVER-VERIFIED]** installed `rp` subcommand equivalence, no-argument Remote Control delegation, uninstall/residue ownership, and overwrite/PATH-shadowing collision refusal: pass
-- strict marketplace/plugin validation: pass; 1.1 실제 설치 inventory (skills 12, MCP 1)는 historical pass, 2.0 source inventory는 skills 14/MCP 1이며 reinstall acceptance pending
+- strict marketplace/plugin validation: pass; 1.1 실제 설치 inventory (skills 12, MCP 1)는 historical pass, 2.0.1 source/current-user inventory는 skills 14/MCP 1
 - actual installed `/research-peer:make` without arguments asked the owner for a room name: pass
 - release archive clean install, installed 14-skill inventory/`help update`/strict plugin, full uninstall residue-none: pass
 
@@ -41,6 +41,7 @@
 - installer/uninstaller: manifest integrity, atomic JSON edit, path/symlink guard, idempotence
 - updater: fixed production source, source identity/component-version consistency, check-only, downgrade refusal, state-preserving apply, conditional daemon restart
 - action skills: plugin discovery용 make/join/ask/handoff/rooms/use/status/leave/delete/auto-answer/update/peers/help 설치
+- guided onboarding skill contract: prompt 응답 뒤 workflow 재개, direct/tunnel 구분, endpoint/daemon reconciliation, owner 대신 CLI flag 구성, auto-answer 기본 off와 live Claude session 의존성
 
 ## Doctor
 

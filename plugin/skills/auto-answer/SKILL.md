@@ -11,6 +11,7 @@ If `$ARGUMENTS` is empty, run `research-peer room list`, ask which room to confi
 Explain before changing anything:
 
 - Auto-answer is off by default.
+- It works only while a Research Peer-enabled Claude session is running and receiving Channel events; the daemon alone does not generate model answers.
 - Only an inbound `QUESTION` with `reply_required=true` and no `owner_attention` can be answered automatically.
 - Automatic generation may emit `ANSWER` only. It must never emit `QUESTION`; every `ANSWER` is terminal.
 - Each `request_id` is auto-answered at most once and automation depth is incremented.
