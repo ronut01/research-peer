@@ -127,8 +127,10 @@ Plugin identity는 `~/.claude/skills/research-peer-plugin/.claude-plugin/plugin.
 2. requested room/session을 register/bind
 3. Claude command를 출력 또는 exec
 4. channel development flag 추가
-5. 인자 없는 `rp`는 `start --remote-control`로 위임; canonical `research-peer`와 명시적 `--no-remote-control`은 flag 없음
-6. `--continue`/`--resume ID`가 명시된 경우만 conversation resume
+5. 인자 없는 `rp`는 `start --remote-control --auto-answer`로 위임하고 child Claude environment에 session-only full auto-answer opt-in을 설정
+6. answer tool은 질문의 durable `delivery_session_id`, live binding, launcher opt-in을 함께 검사하며 명시적 persistent room policy가 있으면 우선 적용
+7. canonical `research-peer`와 `--no-remote-control --no-auto-answer`은 두 launcher opt-in을 설정하지 않음
+8. `--continue`/`--resume ID`가 명시된 경우만 conversation resume
 
 daemon은 `Restart=on-failure`, conservative restart delay, `UMask=0077`로 운용한다. lingering이 없으면 tmux fallback과 logout 한계를 출력한다. Channel Claude process는 interactive/Remote Control 특성 때문에 daemon service와 분리한다.
 

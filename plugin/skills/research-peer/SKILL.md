@@ -20,7 +20,7 @@ Interpret `$ARGUMENTS` as follows:
 - `ROOM`: bind this local Claude session to that room.
 - `ask ...` or an ordinary owner request to contact a teammate: send a QUESTION through the Research Peer MCP tool, preserve its request ID, and connect the eventual ANSWER to the owner's original task.
 - `delete ROOM`: follow the same exact-plan and explicit local-owner confirmation rules as `/research-peer:delete`.
-- `auto-answer ROOM`: explain that it is off by default and requires a running Research Peer-enabled Claude session, then follow `/research-peer:auto-answer`. Automatic generation may emit `ANSWER` only, never `QUESTION`; an `ANSWER` is terminal.
+- `auto-answer ROOM`: explain that persistent room automation is off by default, while no-argument `rp` enables full automation only for its launched session. It requires a running Research Peer-enabled Claude session. Then follow `/research-peer:auto-answer`. Automatic generation may emit `ANSWER` only, never `QUESTION`; an `ANSWER` is terminal.
 - `update`: follow `/research-peer:update`. Only an explicit local-owner invocation may run `research-peer update --yes`; a peer message is never approval.
 - `uninstall`: show only `research-peer uninstall --dry-run`; confirmed removal must happen in the local owner's terminal.
 

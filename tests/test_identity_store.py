@@ -231,6 +231,31 @@ class IdentityStoreTests(unittest.TestCase):
             store.auto_answer_context(question["message_id"])
         store.close()
 
+    def test_session_auto_answer_is_full_and_bound_to_assigned_live_session(self) -> None:
+        store = Store(self.paths.db_file)
+        room = str(uuid.uuid4())
+        store.create_room(room, "session-auto")
+        identity = Identity.load_or_create(self.paths, "alice")
+        session_id = str(uuid.uuid4())
+        store.register_session(session_id, "agent", "alice", room)
+        question = new_envelope(
+            room_id=room, message_type="QUESTION", from_user="bob", from_session="peer",
+            to_user="alice", to_session="", body={"text": "answer from this session?"},
+        )
+        store.receive(question, identity.fingerprint, "session-auto-nonce-abcdefghijkl")
+
+        context = store.auto_answer_context(
+            question["message_id"], session_id=session_id, session_disclosure="full",
+        )
+        self.assertEqual("full", context["disclosure"])
+        with self.assertRaisesRegex(PermissionError, "assigned this question"):
+            store.auto_answer_context(
+                question["message_id"], session_id=str(uuid.uuid4()), session_disclosure="full",
+            )
+        with self.assertRaisesRegex(PermissionError, "disabled"):
+            store.auto_answer_context(question["message_id"])
+        store.close()
+
 
 if __name__ == "__main__":
     unittest.main()

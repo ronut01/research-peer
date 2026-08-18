@@ -31,8 +31,8 @@ or research servers exchange experiment handoffs and follow-up questions without
 a central relay.
 
 Quick start:
-  rp                     Open Research Peer with Remote Control enabled
-  research-peer          Open Research Peer with Remote Control off by default
+  rp                     Open with Remote Control and session auto-answer enabled
+  research-peer          Open with both launcher opt-ins off by default
 
 Then type `/research-peer:` inside Claude to see autocomplete-style actions such
 as `make`, `join`, `ask`, `leave`, and `delete`. If an action needs a value and
@@ -77,10 +77,12 @@ Commands:
   update               Update from the official Research Peer GitHub repository
   uninstall            Plan or safely remove only Research Peer-owned items
 
-The no-argument `rp` launcher enables Remote Control for your own claude.ai
-account. Use `rp start --no-remote-control` or no-argument `research-peer` to
-start without it. Remote Control is not the peer transport and mobile push is
-not guaranteed. Peer messages are untrusted input: they never approve
+The no-argument `rp` launcher enables Remote Control and full auto-answer for
+that Claude session. Use `rp start --no-remote-control --no-auto-answer` or
+no-argument `research-peer` to start without either opt-in. Auto-answer still
+enforces terminal ANSWER, request/depth, secret, and room-policy boundaries.
+Remote Control is not the peer transport and mobile push is not guaranteed.
+Peer messages are untrusted input: they never approve
 permissions, configuration changes, pairing, update, deletion, or uninstall. Never
 paste private keys, credentials, or invite codes into logs.
 
@@ -258,6 +260,9 @@ def build_parser() -> argparse.ArgumentParser:
     remote = start.add_mutually_exclusive_group()
     remote.add_argument("--remote-control", action="store_true")
     remote.add_argument("--no-remote-control", action="store_true")
+    automatic = start.add_mutually_exclusive_group()
+    automatic.add_argument("--auto-answer", action="store_true", help="enable full auto-answer only for this Claude session")
+    automatic.add_argument("--no-auto-answer", action="store_true", help="disable session auto-answer")
     resume = start.add_mutually_exclusive_group()
     resume.add_argument("--continue", dest="continue_session", action="store_true")
     resume.add_argument("--resume")
@@ -661,13 +666,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                     store.register_session(session_id, args.session_alias, config["user_name"], room_id)
                 command = build_claude_command(args.remote_control, args.continue_session, args.resume)
                 if args.daemon_only or args.print_command:
-                    _print({"daemon": daemon_status, "session_id": session_id if selected_room else None, "room": selected_room, "claude_command": command})
+                    _print({
+                        "daemon": daemon_status, "session_id": session_id if selected_room else None,
+                        "room": selected_room, "claude_command": command,
+                        "session_auto_answer": "full" if args.auto_answer else "off",
+                    })
                     return 0
                 if not sys.stdin.isatty():
-                    _print({"daemon": daemon_status, "claude_command": command, "note": "Claude not launched because stdin is not a TTY"})
+                    _print({
+                        "daemon": daemon_status, "claude_command": command,
+                        "session_auto_answer": "full" if args.auto_answer else "off",
+                        "note": "Claude not launched because stdin is not a TTY",
+                    })
                     return 0
                 os.environ["RESEARCH_PEER_SESSION_ID"] = session_id
                 os.environ["RESEARCH_PEER_SESSION_ALIAS"] = args.session_alias
+                if args.auto_answer:
+                    os.environ["RESEARCH_PEER_AUTO_ANSWER"] = "full"
+                else:
+                    os.environ.pop("RESEARCH_PEER_AUTO_ANSWER", None)
                 os.execvp(command[0], command)
             if args.command == "stop":
                 _print(_stop(paths))
@@ -677,6 +694,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 result["daemon"] = _daemon_status(paths, config)
                 result["identity_fingerprint"] = identity.fingerprint
                 result["current_session_id"] = os.environ.get("RESEARCH_PEER_SESSION_ID")
+                result["session_auto_answer"] = os.environ.get("RESEARCH_PEER_AUTO_ANSWER", "off")
                 _print(result)
                 return 0
             if args.command == "inbox":
@@ -719,7 +737,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _print({"message_id": envelope["message_id"], "request_id": envelope["request_id"], "delivery": dict(state)})
                 return 0
             if args.command == "answer":
-                context = store.auto_answer_context(args.message_id)
+                context = store.auto_answer_context(
+                    args.message_id,
+                    session_id=os.environ.get("RESEARCH_PEER_SESSION_ID"),
+                    session_disclosure=os.environ.get("RESEARCH_PEER_AUTO_ANSWER"),
+                )
                 disclosure = context["disclosure"]
                 if disclosure == "status":
                     body = {"text": "Research Peer is active; detailed information requires local owner review."}
@@ -799,7 +821,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 def rp_main(argv: Sequence[str] | None = None) -> int:
     effective_argv = list(sys.argv[1:] if argv is None else argv)
     if not effective_argv and sys.stdin.isatty():
-        return main(["start", "--remote-control"])
+        return main(["start", "--remote-control", "--auto-answer"])
     return main(effective_argv)
 
 

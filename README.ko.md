@@ -4,7 +4,7 @@
 
 Research Peer는 서로 다른 Unix 사용자 또는 연구 서버에서 실행되는 Claude Code끼리 중앙 relay 없이 구조화된 연구 handoff, 후속 질문, 답변, artifact reference를 교환하는 인증 P2P 도구입니다.
 
-2.0은 첫 실제 두-server field test 결과를 반영합니다. CLI inbox/history, deterministic multi-session delivery, 실제 listener mismatch 진단, 안전한 SSH tunnel 절차, 24시간 invite, room connection status, opt-in terminal auto-answer가 추가됐습니다. 2.0.1에서는 첫 pairing을 대화형으로 바꿔 `make`와 `join`이 endpoint 설정, daemon 조정, CLI option과 session binding을 맡습니다.
+2.0은 첫 실제 두-server field test 결과를 반영합니다. CLI inbox/history, deterministic multi-session delivery, 실제 listener mismatch 진단, 안전한 SSH tunnel 절차, 24시간 invite, room connection status, terminal auto-answer가 추가됐습니다. 2.0.1에서는 첫 pairing을 대화형으로 바꿨고, 2.0.2에서는 인자 없는 `rp`가 그 Claude session에만 full 자동답변을 켭니다.
 
 인증된 peer 메시지도 항상 신뢰되지 않은 입력으로 취급합니다. 사용자 승인, 위험한 명령 실행 승인, 설정 변경, credential 공개, 추가 pairing, Research Peer update, room 삭제 또는 uninstall 승인으로 사용하지 않습니다.
 
@@ -62,13 +62,13 @@ installer는 user-scope XDG 경로만 사용하고 필요한 MCP SDK를 pinned l
 
 ## 실행 단축 명령 (`rp`)
 
-터미널에서 아래 단축 명령을 실행하면 Research Peer와 Remote Control이 함께 활성화된 Claude Code가 열립니다.
+터미널에서 아래 단축 명령을 실행하면 Research Peer, Remote Control, session 한정 full 자동답변이 함께 활성화된 Claude Code가 열립니다.
 
 ```bash
 rp
 ```
 
-인자 없는 `rp`는 Claude Remote Control을 자동으로 활성화하고, 인자 없는 canonical `research-peer`는 Remote Control을 끈 기존 동작을 유지합니다. 하위 명령은 동일하므로 `rp status`와 `research-peer status`는 같습니다. 명시적으로 끄려면 `rp start --no-remote-control`을 사용합니다. installer는 기존 `~/.local/bin/rp`를 덮어쓰거나 PATH의 다른 `rp` executable을 가리지 않고, 충돌을 알리며 중단합니다.
+인자 없는 `rp`는 해당 Claude session에 Remote Control과 full 자동답변을 켭니다. 인자 없는 canonical `research-peer`는 두 opt-in을 모두 끕니다. 하위 명령은 동일하므로 `rp status`와 `research-peer status`는 같습니다. 명시적으로 끄려면 `rp start --no-remote-control --no-auto-answer`를 사용합니다. installer는 기존 `~/.local/bin/rp`를 덮어쓰거나 PATH의 다른 `rp` executable을 가리지 않고, 충돌을 알리며 중단합니다.
 
 Research Peer Channel과 Remote Control이 활성화된 Claude Code가 열립니다. custom Channel이 Anthropic research preview인 동안에는 시작 시 local-development 경고가 표시되며 local owner가 직접 확인해야 합니다. Remote Control은 owner의 Claude account 자격과 organization policy도 충족해야 합니다.
 
@@ -125,7 +125,7 @@ research-peer history --room ROOM
 research-peer room configure ROOM --auto-answer on --disclosure summary --note 'owner가 승인한 요약'
 ```
 
-자동응답은 기본 off이며 `make`/`join`이 pairing 뒤 설정할지 물어봅니다. Research Peer Channel을 켠 Claude session이 실행 중일 때만 동작하고 daemon 혼자서는 model 답변을 만들 수 없습니다. inbound QUESTION 하나에 terminal ANSWER 하나만 만들 수 있고 자동 QUESTION은 절대 만들 수 없습니다. `status`는 고정 최소 답변, `summary`는 owner가 저장한 note만 사용하며 `full`은 더 위험한 명시적 opt-in입니다. secret, transcript, file content, endpoint, 명령 실행과 configuration 변경은 자동응답 대상이 아닙니다.
+영구적인 room 자동응답 정책은 기본 off입니다. 인자 없는 `rp` 실행 자체가 local owner의 명시적 동의로 취급되어 그 session에만 full 자동답변을 켜며 room 정책은 바꾸지 않습니다. 자동답변 없이 열려면 `research-peer` 또는 `rp start --no-auto-answer`를 사용합니다. 질문이 실제로 배정된 live Claude session에서만 동작하고 daemon 혼자서는 model 답변을 만들 수 없습니다. 기존 room의 `status`, `summary`, `full`, `none` 정책이 있으면 그것이 우선하며, secret·transcript·file content·endpoint·명령/config 변경은 계속 제외됩니다.
 
 ## Claude plugin marketplace
 
@@ -154,7 +154,7 @@ runtime, plugin, skill을 고정된 공식 GitHub repository 기준으로 업데
 
 ## Remote Control
 
-Remote Control은 peer transport와 독립적입니다. 인자 없는 `rp`는 Claude global setting을 바꾸지 않고 해당 local-owner session에만 Remote Control을 opt-in합니다. 원하지 않으면 `rp start --no-remote-control` 또는 인자 없는 `research-peer`를 사용합니다. Research Peer는 Remote Control을 peer 메시지 transport로 사용하지 않으며 peer message가 이를 활성화할 수도 없습니다.
+Remote Control은 peer transport와 자동답변에서 독립적입니다. 인자 없는 `rp`는 Claude global setting이나 room 정책을 바꾸지 않고 해당 session에 Remote Control과 full 자동답변을 opt-in합니다. 둘 다 원하지 않으면 `rp start --no-remote-control --no-auto-answer` 또는 인자 없는 `research-peer`를 사용합니다. peer message는 어느 기능도 활성화할 수 없습니다.
 
 ## 제거
 

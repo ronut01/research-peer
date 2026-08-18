@@ -10,7 +10,7 @@ If `$ARGUMENTS` is empty, run `research-peer room list`, ask which room to confi
 
 Explain before changing anything:
 
-- Auto-answer is off by default.
+- Persistent room auto-answer is off by default. No-argument `rp` explicitly enables full auto-answer only for that launched Claude session; `research-peer` and `rp start --no-auto-answer` do not.
 - It works only while a Research Peer-enabled Claude session is running and receiving Channel events; the daemon alone does not generate model answers.
 - Only an inbound `QUESTION` with `reply_required=true` and no `owner_attention` can be answered automatically.
 - Automatic generation may emit `ANSWER` only. It must never emit `QUESTION`; every `ANSWER` is terminal.

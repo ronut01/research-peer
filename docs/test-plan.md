@@ -1,4 +1,4 @@
-# Research Peer 2.0.1 테스트 계획
+# Research Peer 2.0.2 테스트 계획
 
 ## 원칙
 
@@ -8,7 +8,7 @@
 
 ## 2026-08-18 실행 결과 요약
 
-- Python unittest: 42 tests pass (`rp` Remote Control dispatch, inbox/session routing, listener mismatch, terminal auto-answer, guided make/join skill contract, room delete/leave cleanup, installer/action-skill/updater, 2-peer loopback E2E 포함)
+- Python unittest: 43 tests pass (`rp` Remote Control/session-auto-answer dispatch, assigned live-session policy, inbox/session routing, listener mismatch, terminal auto-answer, guided make/join skill contract, room delete/leave cleanup, installer/action-skill/updater, 2-peer loopback E2E 포함)
 - Node test: 4 tests pass, 실제 stdio MCP initialize/listTools handshake 포함
 - Ruff 0.12.9: pass
 - Python compileall: pass
@@ -21,7 +21,7 @@
 - actual plain `/research-peer help` personal skill invocation: pass
 - actual no-argument `research-peer` TTY launch and development-Channel startup: pass
 - **[SERVER-VERIFIED]** installed `rp` subcommand equivalence, no-argument Remote Control delegation, uninstall/residue ownership, and overwrite/PATH-shadowing collision refusal: pass
-- strict marketplace/plugin validation: pass; 1.1 실제 설치 inventory (skills 12, MCP 1)는 historical pass, 2.0.1 source/current-user inventory는 skills 14/MCP 1
+- strict marketplace/plugin validation: pass; 1.1 실제 설치 inventory (skills 12, MCP 1)는 historical pass, 2.0.2 source/current-user inventory는 skills 14/MCP 1
 - actual installed `/research-peer:make` without arguments asked the owner for a room name: pass
 - release archive clean install, installed 14-skill inventory/`help update`/strict plugin, full uninstall residue-none: pass
 
@@ -36,7 +36,7 @@
 - transport: frame length, truncated/invalid JSON, TLS pin match/mismatch, auth failure
 - routing: exact/latest session assignment, waiting claim, alias retirement, missing/stale target, room isolation, leave cancellation, exact room delete
 - visibility: CLI inbox/history, room status, config/live listener mismatch
-- security: terminal ANSWER, request-id idempotence, automation depth, disclosure default off, rate/loop limits, path traversal refs, credential redaction, peer uninstall text inert
+- security: terminal ANSWER, request-id idempotence, automation depth, persistent disclosure default off, `rp` session full opt-in limited to the assigned live session, room-policy precedence, rate/loop limits, path traversal refs, credential redaction, peer uninstall text inert
 - CLI help: main and every subcommand snapshot/required phrase
 - installer/uninstaller: manifest integrity, atomic JSON edit, path/symlink guard, idempotence
 - updater: fixed production source, source identity/component-version consistency, check-only, downgrade refusal, state-preserving apply, conditional daemon restart
@@ -119,8 +119,8 @@ temp HOME에서:
 
 자동 test는 launcher command만 검사한다.
 
-- no-argument `rp`: `start --remote-control`로 정확히 한 번 위임
-- no-argument `research-peer`와 explicit `--no-remote-control`: flag 없음
+- no-argument `rp`: `start --remote-control --auto-answer`로 정확히 한 번 위임
+- no-argument `research-peer`와 explicit `--no-remote-control --no-auto-answer`: 두 opt-in 없음
 - `--remote-control`: 정확히 한 번 추가
 - `--continue`/`--resume`: 명시된 경우만 추가
 - P2P daemon startup는 RC 실패와 독립

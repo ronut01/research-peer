@@ -606,7 +606,10 @@ class Store:
             })
         return result
 
-    def auto_answer_context(self, question_message_id: str) -> dict[str, Any]:
+    def auto_answer_context(
+        self, question_message_id: str, *, session_id: str | None = None,
+        session_disclosure: str | None = None,
+    ) -> dict[str, Any]:
         row = self.connection.execute(
             """SELECT m.*,r.auto_answer,r.disclosure,r.note
                FROM messages m JOIN rooms r ON r.room_id=m.room_id
@@ -620,9 +623,20 @@ class Store:
             raise ValueError("automatic replies are allowed only for QUESTION messages requiring a reply")
         if envelope["owner_attention"]:
             raise PermissionError("question requires local owner attention")
+        disclosure = row["disclosure"]
         if not row["auto_answer"]:
-            raise PermissionError("auto-answer is disabled for this room")
-        if row["disclosure"] == "none":
+            if session_disclosure != "full" or not session_id:
+                raise PermissionError("auto-answer is disabled for this room and session")
+            cutoff = format_time(utc_now() - timedelta(seconds=SESSION_STALE_SECONDS))
+            session = self.connection.execute(
+                """SELECT 1 FROM sessions
+                   WHERE session_id=? AND room_id=? AND active=1 AND last_seen>=?""",
+                (session_id, row["room_id"], cutoff),
+            ).fetchone()
+            if session is None or row["delivery_session_id"] != session_id:
+                raise PermissionError("session auto-answer requires the live session assigned this question")
+            disclosure = "full"
+        if disclosure == "none":
             raise PermissionError("room disclosure policy forbids automatic answers")
         existing = self.connection.execute(
             "SELECT 1 FROM auto_answers WHERE room_id=? AND request_id=?",
@@ -634,7 +648,7 @@ class Store:
             "room_id": row["room_id"], "request_id": envelope["request_id"],
             "question_message_id": question_message_id, "from": envelope["from"],
             "incoming_depth": envelope.get("automation_depth", 0),
-            "disclosure": row["disclosure"], "note": row["note"],
+            "disclosure": disclosure, "note": row["note"],
         }
 
     def enqueue_auto_answer(
