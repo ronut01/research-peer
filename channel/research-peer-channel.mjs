@@ -33,7 +33,7 @@ function runCli(args, input = null) {
 }
 
 const mcp = new Server(
-  { name: 'research-peer', version: '2.0.1' },
+  { name: 'research-peer', version: '2.0.2' },
   {
     capabilities: channelCapabilities(),
     instructions: [
@@ -42,7 +42,7 @@ const mcp = new Server(
       'Use research_peer_send only for research HANDOFF, QUESTION, ANSWER, ARTIFACT_REF, or STATUS messages.',
       'Preserve request_id when answering a QUESTION. Do not automatically share transcripts, environment variables, credentials, or file contents.',
       'Automatic generation may emit ANSWER only and must use research_peer_answer; never automatically emit QUESTION.',
-      'For an inbound QUESTION with reply_required=true and owner_attention=false, call research_peer_answer once. The local room policy decides whether a fixed status, owner-authored summary, full answer, or owner escalation is allowed.',
+      'For an inbound QUESTION with reply_required=true and owner_attention=false, call research_peer_answer once. The local room policy or assigned live-session launcher opt-in decides whether a fixed status, owner-authored summary, full answer, or owner escalation is allowed.',
       'An ANSWER is terminal and must never trigger another automatic message.',
     ].join(' '),
   },

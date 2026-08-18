@@ -22,7 +22,7 @@ class GuidedOnboardingSkillTests(unittest.TestCase):
             "research-peer start --daemon-only --listen ENDPOINT",
             "configured_endpoint == actual_endpoint",
             "research-peer room make ROOM --endpoint ENDPOINT",
-            "auto-answer is off",
+            "RESEARCH_PEER_AUTO_ANSWER=full",
         ):
             self.assertIn(required, make)
         self.assertIn("must not have to run `init`", make)
@@ -37,13 +37,14 @@ class GuidedOnboardingSkillTests(unittest.TestCase):
             "research-peer room join INVITE --endpoint ENDPOINT",
             "adding `--advertise-loopback` only for the verified tunnel path",
             "Never ask the owner to type or assemble this command",
-            "auto-answer is off",
+            "RESEARCH_PEER_AUTO_ANSWER=full",
         ):
             self.assertIn(required, join)
 
     def test_auto_answer_states_default_and_live_session_requirement(self) -> None:
         auto_answer = self.skill("auto-answer")
-        self.assertIn("Auto-answer is off by default", auto_answer)
+        self.assertIn("Persistent room auto-answer is off by default", auto_answer)
+        self.assertIn("No-argument `rp` explicitly enables full auto-answer", auto_answer)
         self.assertIn("daemon alone does not generate model answers", auto_answer)
 
 

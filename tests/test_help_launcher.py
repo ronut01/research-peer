@@ -38,12 +38,12 @@ class HelpLauncherTests(unittest.TestCase):
         resumed = build_claude_command(resume="abc")
         self.assertEqual(["--resume", "abc"], resumed[-2:])
 
-    def test_rp_no_args_enables_remote_control_only_for_interactive_launch(self) -> None:
+    def test_rp_no_args_enables_remote_control_and_session_auto_answer(self) -> None:
         interactive_stdin = mock.Mock()
         interactive_stdin.isatty.return_value = True
         with mock.patch.object(sys, "stdin", interactive_stdin), mock.patch("research_peer.cli.main", return_value=0) as delegated:
             self.assertEqual(0, rp_main([]))
-        delegated.assert_called_once_with(["start", "--remote-control"])
+        delegated.assert_called_once_with(["start", "--remote-control", "--auto-answer"])
 
         with mock.patch("research_peer.cli.main", return_value=0) as delegated:
             self.assertEqual(0, rp_main(["status"]))
@@ -52,8 +52,8 @@ class HelpLauncherTests(unittest.TestCase):
     def test_noninteractive_no_args_still_shows_help(self) -> None:
         code, output = self.capture([])
         self.assertEqual(0, code)
-        self.assertIn("rp                     Open Research Peer with Remote Control enabled", output)
-        self.assertIn("research-peer          Open Research Peer with Remote Control off", output)
+        self.assertIn("rp                     Open with Remote Control and session auto-answer enabled", output)
+        self.assertIn("research-peer          Open with both launcher opt-ins off", output)
 
     def test_room_make_alias_and_delete_flags_parse(self) -> None:
         from research_peer.cli import build_parser
@@ -63,6 +63,13 @@ class HelpLauncherTests(unittest.TestCase):
         delete = build_parser().parse_args(["room", "delete", "toy", "--dry-run"])
         self.assertTrue(delete.dry_run)
         self.assertFalse(delete.yes)
+
+        automatic = build_parser().parse_args(["start", "--auto-answer"])
+        self.assertTrue(automatic.auto_answer)
+        self.assertFalse(automatic.no_auto_answer)
+        disabled = build_parser().parse_args(["start", "--no-auto-answer"])
+        self.assertFalse(disabled.auto_answer)
+        self.assertTrue(disabled.no_auto_answer)
 
     def test_internal_transport_commands_are_hidden(self) -> None:
         from research_peer.cli import build_parser

@@ -11,7 +11,7 @@
       "name": "research-peer",
       "source": "./plugin",
       "description": "Research Peer Channel, MCP tools, and guided Claude skill",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "category": "collaboration"
     }
   ]

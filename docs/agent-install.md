@@ -35,7 +35,7 @@ research-peer uninstall --dry-run
 
 Expected essentials:
 
-- `research-peer version` and `rp version` both report version `2.0.1`
+- `research-peer version` and `rp version` both report version `2.0.2`
 - local bind, loopback, and Unix socket checks pass where the sandbox permits them
 - Claude plugin inventory contains MCP server `channel`, 14 skills, and 3 safe tools (`research_peer_send`, `research_peer_answer`, `research_peer_status`)
 - `/research-peer:update` exists and `research-peer help update` names only the fixed official GitHub source; do not perform a network update merely to verify installation
@@ -52,7 +52,7 @@ Tell the owner that the normal entry point is the short launcher:
 rp
 ```
 
-No-argument `rp` starts the Research Peer Channel with Claude Remote Control enabled for that session. It does not change Claude's global Remote Control setting. The canonical no-argument `research-peer` launcher keeps Remote Control off, while subcommands such as `rp status` and `research-peer status` remain equivalent. Installation must refuse to overwrite an unrelated existing `~/.local/bin/rp` or shadow another `rp` executable already on `PATH`.
+No-argument `rp` starts the Research Peer Channel with Claude Remote Control and full auto-answer enabled only for that session. It does not change Claude's global Remote Control setting or persistent room policy. The canonical no-argument `research-peer` launcher keeps both opt-ins off; `rp start --no-remote-control --no-auto-answer` is the explicit opt-out path. Subcommands such as `rp status` and `research-peer status` remain equivalent. Installation must refuse to overwrite an unrelated existing `~/.local/bin/rp` or shadow another `rp` executable already on `PATH`.
 
 Claude Code will show a development-Channel confirmation while Research Peer remains a custom research-preview Channel. The local owner must confirm it. Once Claude opens, guide setup through `/research-peer`; do not make the owner construct low-level `init`, `session register`, `send`, or Channel flag commands.
 

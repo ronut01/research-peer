@@ -1,6 +1,6 @@
 {
   "name": "research-peer",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Authenticated peer-to-peer research handoff Channel for Claude Code",
   "author": {"name": "Research Peer contributors"},
   "channels": [{"server": "channel"}]

@@ -30,7 +30,7 @@ Research Peer Channel은 공식 permission relay capability를 선언하지 않�
 | prompt injection | provenance tag/text, sender gate, capability 최소화, no permission relay | Claude가 untrusted instruction을 잘못 따를 모델 위험 |
 | cross-room leak | room UUID membership check, session binding, DB query isolation | 사용자가 직접 잘못된 artifact를 보내는 위험 |
 | agent loop | automatic QUESTION 금지, terminal ANSWER, automation depth, request_id 1회, rate limit | 두 owner가 수동으로 새 QUESTION을 반복 가능 |
-| automatic disclosure | default off, room disclosure level, fixed status/owner note, explicit full opt-in, audit | full opt-in에서 model이 허용 범위를 오판할 위험 |
+| automatic disclosure | persistent room default off, explicit no-argument `rp` session opt-in, assigned live-session check, room disclosure precedence, audit | full opt-in에서 model이 허용 범위를 오판할 위험 |
 | DoS/oversize | pre-read frame size 256 KiB, connection/read timeout, per-peer token bucket | authorized peer가 지속적으로 자원 소모 |
 | path traversal | artifact는 reference object, file auto-read 없음, explicit allow root | owner가 위험 path를 직접 허용 |
 | secret leakage | redaction, no env/transcript auto-send, log field allowlist | body에 사용자가 직접 secret 입력 |
@@ -91,11 +91,11 @@ HANDOFF artifact는 reference만 자동 처리한다. local file을 전송하려
 
 **[OFFICIAL]** Channel event는 `<channel source=...>`로 표시되지만 model context에 들어가는 untrusted text다. Research Peer는 `untrusted_peer_input=true`를 추가하고 system instructions에 owner-approval 금지를 명시한다. Channel 처리/응답을 transport ACK로 오해하지 않는다.
 
-Remote Control은 Anthropic service와 자기 claude.ai account 사이의 별도 outbound 연결이다. peer identity/transport/auth로 사용하지 않는다. **[SERVER-VERIFIED]** 문서화된 인자 없는 `rp` 실행은 해당 local-owner session의 launcher opt-in이며, installer는 조직/global setting을 바꾸지 않는다. 인자 없는 canonical `research-peer`와 `rp start --no-remote-control`은 off 경로다. peer message는 launcher를 호출하거나 Remote Control을 enable할 수 없다. 모바일 push는 guaranteed delivery mechanism이 아니다.
+Remote Control은 Anthropic service와 자기 claude.ai account 사이의 별도 outbound 연결이다. peer identity/transport/auth로 사용하지 않는다. **[SERVER-VERIFIED]** 문서화된 인자 없는 `rp` 실행은 해당 local-owner session의 Remote Control/full auto-answer launcher opt-in이며, installer는 조직/global setting이나 room policy를 바꾸지 않는다. 인자 없는 canonical `research-peer`와 `rp start --no-remote-control --no-auto-answer`은 두 opt-in의 off 경로다. peer message는 launcher를 호출하거나 어느 기능도 enable할 수 없다. 모바일 push는 guaranteed delivery mechanism이 아니다.
 
 ## 자동 응답 경계
 
-Auto-answer setting 변경은 local CLI/owner-invoked skill만 수행하며 MCP tool에는 config capability가 없다. 기본은 off고 daemon 단독 기능이 아니므로 Research Peer-enabled Claude session이 실행 중이어야 한다. Channel의 dedicated answer tool은 inbound message ID를 받아 다음을 local store에서 재검증한다: QUESTION, `reply_required=true`, `owner_attention=false`, room opt-in, disclosure not `none`, unanswered request ID, depth cap, exactly one peer. 이 tool은 ANSWER 외 type을 선택할 수 없다.
+Persistent room auto-answer setting 변경은 local CLI/owner-invoked skill만 수행하며 MCP tool에는 config capability가 없다. 기본은 off다. 인자 없는 `rp`는 local-owner launcher action 자체를 그 process의 session-only `full` opt-in으로 취급한다. dedicated answer tool은 inbound message ID를 받아 다음을 local store에서 재검증한다: QUESTION, `reply_required=true`, `owner_attention=false`, unanswered request ID, depth cap, exactly one peer, 그리고 room policy opt-in 또는 질문을 배정받은 동일 live session의 launcher opt-in. 명시적 room policy가 있으면 session `full`보다 우선한다. 이 tool은 ANSWER 외 type을 선택할 수 없고 daemon 단독으로 답하지 않는다.
 
 `status`는 고정 응답, `summary`는 owner-authored note만 사용한다. `full`은 model-generated text를 허용하므로 명시적 고위험 opt-in이며 prompt-injection/과다공개의 잔여 위험이 있다. 어느 수준에서도 credential, 환경변수, transcript, private file 내용, invite token, private endpoint, `~/.ssh`, command/config mutation을 자동으로 제공하지 않는다. tool은 shell/file/config capability를 가지지 않으며 policy 밖 질문은 owner에게 escalation한다.
 
@@ -118,5 +118,5 @@ Update는 새 공식 checkout의 code와 `install.sh`를 실행하는 신뢰 결
 - self-signed pinning은 invite 전달 채널의 authenticity에 의존한다.
 - 같은 uid의 다른 process는 local state를 읽거나 조작할 수 있다.
 - model-level prompt injection은 provenance/capability 제한으로 완화하지만 완전히 제거되지 않는다.
-- `full` auto-answer는 명시적 opt-in이어도 model이 공개 범위를 오판할 수 있으므로 status/summary가 권장값이다.
+- `rp`와 room `full` auto-answer는 명시적 opt-in이어도 model이 공개 범위를 오판할 수 있다. persistence가 필요하면 status/summary가 권장값이다.
 - Self-update는 고정된 공식 GitHub repository의 현재 default branch를 신뢰하며 signed tag/commit을 강제하지 않는다.

@@ -73,17 +73,17 @@ research-peer update --check
 
 ## Claude session 시작
 
-정상 진입점은 Research Peer Channel과 자기 claude.ai Remote Control을 한 번에 시작한다.
+정상 진입점은 Research Peer Channel, 자기 claude.ai Remote Control, 그 Claude session 한정 full 자동답변을 한 번에 시작한다.
 
 ```text
 rp
 ```
 
-Remote Control 없이 시작하려면:
+Remote Control과 session 자동답변 없이 시작하려면:
 
 ```text
 research-peer
-rp start --room retrieval-toy --no-remote-control
+rp start --room retrieval-toy --no-remote-control --no-auto-answer
 ```
 
 room을 명시하면서 자기 claude.ai 계정 Remote Control opt-in:
@@ -169,7 +169,7 @@ tunnel이 실제로 열린 뒤에만 A는 `room make ... --endpoint 127.0.0.1:A_
 
 ## 제한된 자동 응답
 
-기본은 off다. `make`와 `join`은 연결 뒤 설정할지 물어보지만 owner가 선택하지 않으면 계속 off다. Research Peer Channel을 load한 Claude session이 실행 중이어야 하며 daemon 단독으로 model 답변을 생성하지 않는다. 권장 순서는 고정 status, owner-authored summary, 마지막으로만 full이다.
+Persistent room 정책의 기본은 off다. 그러나 인자 없는 `rp`는 실행한 owner의 명시적 동의로 그 Claude session에만 full 자동답변을 켜며 room 설정은 바꾸지 않는다. `research-peer` 또는 `rp start --no-auto-answer`로 연 session에는 이 opt-in이 없다. 질문이 실제 배정된 live session만 사용할 수 있고 daemon 단독으로 model 답변을 생성하지 않는다. room 정책을 별도로 켜면 그것이 session full보다 우선하며, persistence에는 고정 status나 owner-authored summary를 권장한다.
 
 ```text
 research-peer room configure ROOM --auto-answer on --disclosure status

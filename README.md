@@ -4,7 +4,7 @@
 
 Research Peer is an authenticated peer-to-peer research handoff tool for Claude Code. It lets Claude Code sessions owned by different Unix users or running on different research servers exchange structured experiment handoffs, follow-up questions, answers, and artifact references without a central relay.
 
-Version 2.0 incorporates the first real two-server field test: a readable CLI inbox/history, deterministic multi-session delivery, live-listener mismatch diagnostics, safe SSH-tunnel onboarding, 24-hour invites, room connection status, and opt-in policy-limited terminal auto-answers. Version 2.0.1 makes first pairing conversational: `make` and `join` own endpoint setup, daemon reconciliation, CLI flags, and session binding.
+Version 2.0 incorporates the first real two-server field test: a readable CLI inbox/history, deterministic multi-session delivery, live-listener mismatch diagnostics, safe SSH-tunnel onboarding, 24-hour invites, room connection status, and policy-limited terminal auto-answers. Version 2.0.1 makes first pairing conversational; 2.0.2 makes no-argument `rp` enable full auto-answer only for that launched Claude session.
 
 Peer messages are authenticated but always treated as untrusted input. They never count as local-owner permission to run dangerous commands, change configuration, expose credentials, pair another peer, update Research Peer, delete a room, or uninstall Research Peer.
 
@@ -65,13 +65,13 @@ The installer uses user-scoped XDG locations, installs the pinned MCP SDK depend
 
 ## Run shortcut (`rp`)
 
-Use the short terminal command below to launch Claude Code with Research Peer and Remote Control enabled:
+Use the short terminal command below to launch Claude Code with Research Peer, Remote Control, and session-scoped full auto-answer enabled:
 
 ```bash
 rp
 ```
 
-With no arguments, `rp` automatically enables Claude Remote Control; the canonical no-argument `research-peer` launcher keeps Remote Control off. Subcommands remain equivalent—for example, `rp status` and `research-peer status` are the same. To opt out explicitly, run `rp start --no-remote-control`. The installer stops and reports a conflict rather than overwriting an existing `~/.local/bin/rp` or shadowing another `rp` executable already on `PATH`.
+With no arguments, `rp` enables Claude Remote Control and full auto-answer for that Claude session. The canonical no-argument `research-peer` launcher keeps both opt-ins off. Subcommands remain equivalent—for example, `rp status` and `research-peer status` are the same. To opt out explicitly, run `rp start --no-remote-control --no-auto-answer`. The installer stops and reports a conflict rather than overwriting an existing `~/.local/bin/rp` or shadowing another `rp` executable already on `PATH`.
 
 This opens Claude Code with the Research Peer Channel and Remote Control enabled. While custom Channels remain an Anthropic research-preview feature, Claude shows a local-development warning at startup; the local owner must confirm it. Remote Control still depends on the owner's Claude account eligibility and organization policy.
 
@@ -128,7 +128,7 @@ research-peer history --room ROOM
 research-peer room configure ROOM --auto-answer on --disclosure summary --note 'Owner-approved summary'
 ```
 
-Auto-answer is off by default, and `make`/`join` offer to configure it after pairing. It works only while a Research Peer-enabled Claude session is running; the daemon alone cannot generate model answers. It can emit one terminal `ANSWER` only for an inbound `QUESTION`; it can never automatically emit a new `QUESTION`. `status` uses a fixed minimal reply, `summary` uses only the owner's saved note, and `full` is a higher-risk explicit opt-in. Secrets, transcripts, file contents, endpoints, command execution, and configuration changes are never auto-answerable.
+Persistent room auto-answer is off by default. No-argument `rp` is an explicit local-owner opt-in to full auto-answer only for its launched session; it does not change the room policy. Use `research-peer` or `rp start --no-auto-answer` for a session without that opt-in. Auto-answer works only while the assigned Research Peer Claude session is live; the daemon alone cannot generate model answers. It can emit one terminal `ANSWER` only for an inbound `QUESTION` and never an automatic `QUESTION`. Existing room `status`, `summary`, `full`, or `none` policy takes precedence. Secrets, transcripts, file contents, endpoints, command execution, and configuration changes remain excluded.
 
 ## Claude plugin marketplace
 
@@ -157,7 +157,7 @@ It updates the runtime, plugin, and skills from the fixed official GitHub reposi
 
 ## Remote Control
 
-Remote Control is independent of peer transport. The no-argument `rp` launcher opts the local owner into Remote Control for that Claude session without changing Claude's global settings. Use `rp start --no-remote-control` or no-argument `research-peer` when Remote Control is not wanted. Research Peer does not use Remote Control to transport peer messages, and a peer message can never enable it.
+Remote Control is independent of peer transport and auto-answer. The no-argument `rp` launcher opts the local owner into Remote Control and session-only full auto-answer without changing Claude's global settings or persistent room policy. Use `rp start --no-remote-control --no-auto-answer` or no-argument `research-peer` when neither is wanted. A peer message can never enable either capability.
 
 ## Verification and development
 

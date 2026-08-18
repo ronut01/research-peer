@@ -1,7 +1,7 @@
 # 구현 상태와 복구 체크포인트
 
 마지막 갱신: 2026-08-18 KST  
-현재 phase: **Research Peer 2.0.1 guided-onboarding source and local automated/user-scope installation verification complete; external Claude/peer acceptance pending**
+현재 phase: **Research Peer 2.0.2 session-scoped rp auto-answer source, local automated verification, and user-scope install complete; external Claude/peer acceptance pending**
 
 session compaction/restart 뒤 이 파일을 먼저 읽는다. 제품 요구사항은 `docs/product-spec.md`, 설계 결정은 `docs/architecture.md`, 안전 경계는 `docs/security-model.md`, 검증 matrix는 `docs/test-plan.md`가 authority다. 현장 근거는 `docs/field-report-2026-08-18.md`다.
 
@@ -32,8 +32,9 @@ session compaction/restart 뒤 이 파일을 먼저 읽는다. 제품 요구사�
 - `/research-peer:auto-answer` owner-only skill과 make/join tunnel/listener guidance
 - `/research-peer:update` owner-only skill과 fixed official GitHub self-updater; release identity/version 검증, downgrade 거부, state 보존, conditional daemon restart
 - `/research-peer:make`와 `join`의 no-prerequisite guided onboarding: prompt 뒤 같은 workflow 재개, direct/tunnel 선택, endpoint/daemon 자동 조정, session binding, 연결 후 auto-answer opt-in 질문
+- 인자 없는 `rp`의 session-only full auto-answer opt-in, `--no-auto-answer`, assigned live-session enforcement, room policy precedence
 - SQLite schema v2 migration: room policy, durable session assignment, auto-answer audit
-- package/Python/plugin/marketplace version 2.0.1
+- package/Python/plugin/marketplace version 2.0.2
 
 ## 유지되는 1.x 기능
 
@@ -41,21 +42,21 @@ session compaction/restart 뒤 이 파일을 먼저 읽는다. 제품 요구사�
 - strict protocol/HANDOFF schema, replay/dedup/rate limits
 - SQLite WAL outbox, durable ACK, exponential retry, daemon recovery
 - Channel provenance, permission relay 없음, user-scope installer/uninstaller safety
-- `rp` session-scoped Remote Control opt-in과 canonical Remote-Control-off `research-peer`
+- `rp` session-scoped Remote Control/full auto-answer opt-in과 canonical opt-in-off `research-peer`
 - room leave/delete exact local scope와 project/artifact preservation
 
 ## 검증 결과
 
-- **[SERVER-VERIFIED]** Python unittest 42 pass: protocol terminal reply, room policy, inbox/history, latest-session assignment, late claim, alias retire, listener mismatch, environment session binding, endpoint validation, 24-hour invite, guided make/join skill contract, installer/uninstaller와 isolated updater 포함
+- **[SERVER-VERIFIED]** Python unittest 43 pass: protocol terminal reply, room/session auto-answer policy, assigned live-session enforcement, inbox/history, latest-session assignment, late claim, alias retire, listener mismatch, environment session binding, endpoint validation, 24-hour invite, guided make/join skill contract, installer/uninstaller와 isolated updater 포함
 - **[SERVER-VERIFIED]** isolated 2-peer TLS HANDOFF/QUESTION/ANSWER/retry + policy-limited auto-answer/request-id audit E2E pass
 - **[SERVER-VERIFIED]** Node test 4 pass: permission relay 없이 `research_peer_send`, `research_peer_answer`, `research_peer_status` 세 tool과 actual stdio handshake 검사
 - **[SERVER-VERIFIED]** installer test는 새 `auto-answer` skill ownership/removal을 포함
-- **[SERVER-VERIFIED]** updater test는 `2.0.1 → 2.0.2` local candidate 적용, component version mismatch/downgrade 거부, identity와 room state 보존을 확인
+- **[SERVER-VERIFIED]** updater test는 `2.0.2 → 2.0.3` local candidate 적용, component version mismatch/downgrade 거부, identity와 room state 보존을 확인
 - **[SERVER-VERIFIED]** Ruff 0.12.9, Python compileall, strict root/plugin validation pass; npm production audit vulnerabilities 0
 - **[SERVER-VERIFIED]** sanitized `dist/research-peer-2.0.0.tar.gz` isolated clean install → 14 skills와 `help update`/strict plugin 확인 → default uninstall residue-none pass
-- **[SERVER-VERIFIED]** 현재 user scope에 2.0.1 reinstall: canonical/`rp` version 2.0.1, plugin skills 14, 새 make/join/auto-answer 내용, daemon listener 일치, local bind/loopback/Unix socket, uninstall dry-run pass
+- **[SERVER-VERIFIED]** 현재 user scope에 2.0.2 reinstall: canonical/`rp` version 2.0.2, plugin skills 14, installed `start --remote-control --auto-answer` delegation과 session env enforcement, daemon 실행/listener 일치 확인
 - **[OFFICIAL]** Claude custom Channel은 여전히 research preview이며 session-start development Channel confirmation과 organization policy에 종속
-- NOT YET TESTED: 실제 Claude에서 2.0.1의 multi-turn make/join onboarding, policy tool의 unattended ANSWER 생성
+- NOT YET TESTED: 실제 Claude에서 2.0.2의 multi-turn make/join onboarding과 `rp` session opt-in unattended ANSWER 생성
 - NOT YET TESTED: published official GitHub의 newer release를 실제 `/research-peer:update`로 clone/apply
 - NOT YET TESTED: 2.0으로 외부 두 server 재-pair 및 tunnel 장기 유지
 - NOT TESTED: Remote Control mobile/browser session 또는 push behavior
