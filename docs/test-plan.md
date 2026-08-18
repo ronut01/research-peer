@@ -20,6 +20,7 @@
 - two real Claude Code processes: A QUESTION Channel injection → B MCP ANSWER → A correlated context recall: pass
 - actual plain `/research-peer help` personal skill invocation: pass
 - actual no-argument `research-peer` TTY launch and development-Channel startup: pass
+- **[SERVER-VERIFIED]** installed `rp` alias equivalence, uninstall/residue ownership, and overwrite/PATH-shadowing collision refusal: pass
 - strict marketplace/plugin validation: pass; 실제 설치 inventory (skills 12, MCP 1): pass
 - actual installed `/research-peer:make` without arguments asked the owner for a room name: pass
 - release archive clean install, installed CLI Channel handshake, full uninstall residue-none: pass
@@ -80,7 +81,7 @@ temp HOME에서:
 
 1. unrelated `~/.claude/settings.json`, skill, plugin, user file 생성
 2. install
-3. CLI/plugin/personal skill/service/config/state/cache/runtime/manifest 확인
+3. canonical CLI/`rp` alias/plugin/personal skill/service/config/state/cache/runtime/manifest 확인
 4. install 재실행
 5. 기본 `uninstall --dry-run`이 full local removal plan을 정확히 보이고 mutation이 없는지 확인
 6. 기본 uninstall이 program과 Research Peer state/key를 제거하고 project/artifact를 보존하는지 확인

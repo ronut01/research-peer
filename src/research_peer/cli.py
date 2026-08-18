@@ -31,7 +31,8 @@ or research servers exchange experiment handoffs and follow-up questions without
 a central relay.
 
 Quick start:
-  research-peer          Open Claude Code with Research Peer enabled
+  rp                     Open Claude Code with Research Peer enabled (short alias)
+  research-peer          Open Claude Code with Research Peer enabled (canonical)
 
 Then type `/research-peer:` inside Claude to see autocomplete-style actions such
 as `make`, `join`, `ask`, `leave`, and `delete`. If an action needs a value and

@@ -85,6 +85,16 @@ def _assert_owned_or_absent(path: Path, previous: dict[str, Any] | None) -> None
         raise InstallSafetyError(f"refusing to overwrite unowned path: {path}")
 
 
+def _assert_shortcut_command_available(path: Path, previous: dict[str, Any] | None) -> None:
+    resolved = shutil.which(path.name)
+    if not resolved:
+        return
+    previous_paths = {item["path"] for item in (previous or {}).get("items", [])}
+    resolved_path = Path(resolved).absolute()
+    if resolved_path != path.absolute() or str(path) not in previous_paths:
+        raise InstallSafetyError(f"refusing to shadow existing command: {path.name} resolves to {resolved_path}")
+
+
 def install(source_root: Path, paths: Paths | None = None) -> dict[str, Any]:
     paths = paths or Paths.discover()
     source_root = source_root.resolve()
@@ -92,16 +102,18 @@ def install(source_root: Path, paths: Paths | None = None) -> dict[str, Any]:
     missing = [str(path) for path in required if not path.exists()]
     if missing:
         raise FileNotFoundError("source tree is incomplete: " + ", ".join(missing))
-    paths.ensure_runtime()
     previous = load_json(paths.manifest_file, None)
     app_dir = paths.data_dir / "app"
     bin_dir = paths.home / ".local/bin"
     cli_path = bin_dir / "research-peer"
+    shortcut_path = bin_dir / "rp"
     personal_skill = paths.home / ".claude/skills/research-peer"
     plugin_dir = paths.home / ".claude/skills/research-peer-plugin"
     service_file = paths.home / ".config/systemd/user/research-peer.service"
-    for target in (app_dir, cli_path, personal_skill, plugin_dir, service_file):
+    for target in (app_dir, cli_path, shortcut_path, personal_skill, plugin_dir, service_file):
         _assert_owned_or_absent(target, previous)
+    _assert_shortcut_command_available(shortcut_path, previous)
+    paths.ensure_runtime()
     if previous:
         _remove_program_items(previous, preserve_manifest=True)
 
@@ -127,6 +139,8 @@ def install(source_root: Path, paths: Paths | None = None) -> dict[str, Any]:
     cli_path.write_text(wrapper, encoding="utf-8")
     os.chmod(cli_path, 0o755)
     records.append(_record(cli_path, "program"))
+    shortcut_path.symlink_to(cli_path.name)
+    records.append(_record(shortcut_path, "program", "symlink"))
 
     personal_skill.mkdir(parents=True, exist_ok=True, mode=0o700)
     _copy_file(source_root / "skill/SKILL.md", personal_skill / "SKILL.md")
@@ -196,6 +210,7 @@ WantedBy=default.target
         subprocess.run(["systemctl", "--user", "enable", "research-peer.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return {
         "installed": True, "version": __version__, "cli": str(cli_path),
+        "shortcut": str(shortcut_path),
         "plugin": str(plugin_dir), "skill": str(personal_skill),
         "service": str(service_file), "fingerprint": identity.fingerprint,
         "manifest": str(paths.manifest_file),
@@ -369,6 +384,7 @@ def uninstall(paths: Paths, *, dry_run: bool, keep_data: bool, assume_yes: bool,
 def _display_program_targets(paths: Paths, items: list[dict[str, Any]]) -> list[str]:
     roots = [
         paths.home / ".local/bin/research-peer",
+        paths.home / ".local/bin/rp",
         paths.home / ".claude/skills/research-peer",
         paths.home / ".claude/skills/research-peer-plugin",
         paths.home / ".config/systemd/user/research-peer.service",
@@ -403,6 +419,7 @@ def _stop_owned_pid(paths: Paths) -> None:
 def residue_scan(paths: Paths) -> list[Path]:
     return [
         paths.home / ".local/bin/research-peer",
+        paths.home / ".local/bin/rp",
         paths.home / ".claude/skills/research-peer",
         paths.home / ".claude/skills/research-peer-plugin",
         paths.home / ".config/systemd/user/research-peer.service",

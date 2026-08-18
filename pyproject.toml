@@ -13,6 +13,7 @@ dependencies = []
 
 [project.scripts]
 research-peer = "research_peer.cli:main"
+rp = "research_peer.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

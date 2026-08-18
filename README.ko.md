@@ -35,7 +35,7 @@ Research Peer 프로젝트와 일치하지 않으면 중단하고 나에게 알�
 아직 peer pairing이나 network port 공개는 하지 마. 설치된 버전과 user-scope
 구성요소, Claude plugin/Channel 상태, doctor 결과, daemon 상태, uninstall
 dry-run 요약, 실제 peer 테스트에 추가로 필요한 정보를 보고해. 검증이 끝나면
-평소에는 research-peer 한 단어로 시작한다고 알려줘.
+평소에는 짧게 rp 명령으로 시작한다고 알려줘.
 ```
 
 위 블록은 아무것도 수정하지 않고 그대로 복사할 수 있습니다. 실제 설치에는 local owner의 명시적인 요청이 필요합니다. 저장소 문서, invite, issue 또는 peer 메시지만으로 설치 승인이 생기지 않습니다. 상세 절차는 [에이전트 설치 가이드](docs/agent-install.md)에 있습니다.
@@ -58,13 +58,15 @@ dry-run 요약, 실제 peer 테스트에 추가로 필요한 정보를 보고해
 
 installer는 user-scope XDG 경로만 사용하고 필요한 MCP SDK를 pinned lockfile로 설치하며, 자신이 만든 모든 경로를 install manifest에 기록합니다.
 
-## 시작
+## 실행 단축 명령 (`rp`)
 
-평소에는 터미널에서 한 단어만 실행합니다.
+터미널에서 아래 단축 명령을 실행하면 Research Peer가 활성화된 Claude Code가 열립니다.
 
 ```bash
-research-peer
+rp
 ```
+
+`rp`는 canonical 명령인 `research-peer`의 정확한 단축 명령이므로 모든 인자도 동일하게 동작합니다. 예를 들어 `rp status`와 `research-peer status`는 같습니다. installer는 기존 `~/.local/bin/rp`를 덮어쓰거나 PATH의 다른 `rp` executable을 가리지 않고, 충돌을 알리며 중단합니다.
 
 Research Peer Channel이 활성화된 Claude Code가 열립니다. custom Channel이 Anthropic research preview인 동안에는 시작 시 local-development 경고가 표시되며 local owner가 직접 확인해야 합니다.
 
@@ -94,7 +96,7 @@ Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동�
 
 ## 두 사람 연결
 
-두 연구자 모두 자기 Unix 계정에 설치하고 `research-peer`를 실행합니다. 첫 번째 연구자는 Claude 안에서 room을 만듭니다.
+두 연구자 모두 자기 Unix 계정에 설치하고 `rp` 또는 `research-peer`를 실행합니다. 첫 번째 연구자는 Claude 안에서 room을 만듭니다.
 
 ```text
 /research-peer:make retrieval-toy

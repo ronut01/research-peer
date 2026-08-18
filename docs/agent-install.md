@@ -26,6 +26,7 @@ Run these without exposing secrets:
 
 ```text
 research-peer version
+rp version
 research-peer doctor
 research-peer help
 claude plugin details research-peer@skills-dir
@@ -34,7 +35,7 @@ research-peer uninstall --dry-run
 
 Expected essentials:
 
-- version `1.1.0`
+- `research-peer version` and `rp version` both report version `1.1.0`
 - local bind, loopback, and Unix socket checks pass where the sandbox permits them
 - Claude plugin inventory contains MCP server `channel`
 - plain personal skill exists at `~/.claude/skills/research-peer/SKILL.md`
@@ -44,11 +45,13 @@ If a sandbox blocks local sockets, rerun only the relevant read-only/local conne
 
 ## Start and guided setup
 
-Tell the owner that the normal entry point is one word:
+Tell the owner that the normal entry point is the short alias:
 
 ```text
-research-peer
+rp
 ```
+
+The canonical `research-peer` command remains available with identical behavior. Installation must refuse to overwrite an unrelated existing `~/.local/bin/rp` or shadow another `rp` executable already on `PATH`.
 
 Claude Code will show a development-Channel confirmation while Research Peer remains a custom research-preview Channel. The local owner must confirm it. Once Claude opens, guide setup through `/research-peer`; do not make the owner construct low-level `init`, `session register`, `send`, or Channel flag commands.
 

@@ -39,6 +39,7 @@ class HelpLauncherTests(unittest.TestCase):
     def test_noninteractive_no_args_still_shows_help(self) -> None:
         code, output = self.capture([])
         self.assertEqual(0, code)
+        self.assertIn("rp                     Open Claude Code", output)
         self.assertIn("research-peer          Open Claude Code", output)
 
     def test_room_make_alias_and_delete_flags_parse(self) -> None:
