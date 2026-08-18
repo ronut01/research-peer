@@ -63,15 +63,15 @@ The installer uses user-scoped XDG locations, installs the pinned MCP SDK depend
 
 ## Run shortcut (`rp`)
 
-Use the short terminal command below to launch Claude Code with Research Peer enabled:
+Use the short terminal command below to launch Claude Code with Research Peer and Remote Control enabled:
 
 ```bash
 rp
 ```
 
-`rp` is an exact shortcut for the canonical `research-peer` command, so all arguments work the same way—for example, `rp status` and `research-peer status` are equivalent. The installer stops and reports a conflict rather than overwriting an existing `~/.local/bin/rp` or shadowing another `rp` executable already on `PATH`.
+With no arguments, `rp` automatically enables Claude Remote Control; the canonical no-argument `research-peer` launcher keeps Remote Control off. Subcommands remain equivalent—for example, `rp status` and `research-peer status` are the same. To opt out explicitly, run `rp start --no-remote-control`. The installer stops and reports a conflict rather than overwriting an existing `~/.local/bin/rp` or shadowing another `rp` executable already on `PATH`.
 
-This opens Claude Code with the Research Peer Channel enabled. While custom Channels remain an Anthropic research-preview feature, Claude shows a local-development warning at startup; the local owner must confirm it.
+This opens Claude Code with the Research Peer Channel and Remote Control enabled. While custom Channels remain an Anthropic research-preview feature, Claude shows a local-development warning at startup; the local owner must confirm it. Remote Control still depends on the owner's Claude account eligibility and organization policy.
 
 Inside Claude Code, type `/research-peer:` to get autocomplete-style actions:
 
@@ -130,7 +130,7 @@ Marketplace installation distributes the namespaced action skills (`/research-pe
 
 ## Remote Control
 
-Remote Control is optional and independent of peer transport. After starting Claude with `research-peer`, use Claude Code's normal Remote Control UX. Research Peer does not use Remote Control to transport peer messages.
+Remote Control is independent of peer transport. The no-argument `rp` launcher opts the local owner into Remote Control for that Claude session without changing Claude's global settings. Use `rp start --no-remote-control` or no-argument `research-peer` when Remote Control is not wanted. Research Peer does not use Remote Control to transport peer messages, and a peer message can never enable it.
 
 ## Verification and development
 

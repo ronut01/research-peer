@@ -50,8 +50,10 @@ class InstallerTests(unittest.TestCase):
         install(ROOT, self.paths)
         self.assertTrue((self.home / ".local/bin/research-peer").exists())
         shortcut = self.home / ".local/bin/rp"
-        self.assertTrue(shortcut.is_symlink())
-        self.assertEqual("research-peer", os.readlink(shortcut))
+        self.assertTrue(shortcut.is_file())
+        self.assertFalse(shortcut.is_symlink())
+        self.assertTrue(shortcut.stat().st_mode & 0o111)
+        self.assertIn("python3 -m research_peer.rp", shortcut.read_text())
         canonical_version = self.run_cli("version")
         shortcut_version = self.run_shortcut("version")
         self.assertEqual(canonical_version.returncode, shortcut_version.returncode)

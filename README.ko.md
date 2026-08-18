@@ -60,15 +60,15 @@ installer는 user-scope XDG 경로만 사용하고 필요한 MCP SDK를 pinned l
 
 ## 실행 단축 명령 (`rp`)
 
-터미널에서 아래 단축 명령을 실행하면 Research Peer가 활성화된 Claude Code가 열립니다.
+터미널에서 아래 단축 명령을 실행하면 Research Peer와 Remote Control이 함께 활성화된 Claude Code가 열립니다.
 
 ```bash
 rp
 ```
 
-`rp`는 canonical 명령인 `research-peer`의 정확한 단축 명령이므로 모든 인자도 동일하게 동작합니다. 예를 들어 `rp status`와 `research-peer status`는 같습니다. installer는 기존 `~/.local/bin/rp`를 덮어쓰거나 PATH의 다른 `rp` executable을 가리지 않고, 충돌을 알리며 중단합니다.
+인자 없는 `rp`는 Claude Remote Control을 자동으로 활성화하고, 인자 없는 canonical `research-peer`는 Remote Control을 끈 기존 동작을 유지합니다. 하위 명령은 동일하므로 `rp status`와 `research-peer status`는 같습니다. 명시적으로 끄려면 `rp start --no-remote-control`을 사용합니다. installer는 기존 `~/.local/bin/rp`를 덮어쓰거나 PATH의 다른 `rp` executable을 가리지 않고, 충돌을 알리며 중단합니다.
 
-Research Peer Channel이 활성화된 Claude Code가 열립니다. custom Channel이 Anthropic research preview인 동안에는 시작 시 local-development 경고가 표시되며 local owner가 직접 확인해야 합니다.
+Research Peer Channel과 Remote Control이 활성화된 Claude Code가 열립니다. custom Channel이 Anthropic research preview인 동안에는 시작 시 local-development 경고가 표시되며 local owner가 직접 확인해야 합니다. Remote Control은 owner의 Claude account 자격과 organization policy도 충족해야 합니다.
 
 Claude Code 안에서 `/research-peer:`를 입력하면 다음 동작이 자동완성 목록처럼 보입니다.
 
@@ -127,7 +127,7 @@ Marketplace는 namespaced action skill(`/research-peer:make`, `:join`, `:ask`, `
 
 ## Remote Control
 
-Remote Control은 선택 사항이며 peer transport와 독립적입니다. `research-peer`로 Claude를 시작한 뒤 기존 Claude Code Remote Control UX를 그대로 사용합니다. Research Peer는 Remote Control을 peer 메시지 transport로 사용하지 않습니다.
+Remote Control은 peer transport와 독립적입니다. 인자 없는 `rp`는 Claude global setting을 바꾸지 않고 해당 local-owner session에만 Remote Control을 opt-in합니다. 원하지 않으면 `rp start --no-remote-control` 또는 인자 없는 `research-peer`를 사용합니다. Research Peer는 Remote Control을 peer 메시지 transport로 사용하지 않으며 peer message가 이를 활성화할 수도 없습니다.
 
 ## 제거
 

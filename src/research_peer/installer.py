@@ -139,8 +139,10 @@ def install(source_root: Path, paths: Paths | None = None) -> dict[str, Any]:
     cli_path.write_text(wrapper, encoding="utf-8")
     os.chmod(cli_path, 0o755)
     records.append(_record(cli_path, "program"))
-    shortcut_path.symlink_to(cli_path.name)
-    records.append(_record(shortcut_path, "program", "symlink"))
+    shortcut_wrapper = f"#!/bin/sh\nPYTHONPATH='{app_dir}' exec python3 -m research_peer.rp \"$@\"\n"
+    shortcut_path.write_text(shortcut_wrapper, encoding="utf-8")
+    os.chmod(shortcut_path, 0o755)
+    records.append(_record(shortcut_path, "program"))
 
     personal_skill.mkdir(parents=True, exist_ok=True, mode=0o700)
     _copy_file(source_root / "skill/SKILL.md", personal_skill / "SKILL.md")

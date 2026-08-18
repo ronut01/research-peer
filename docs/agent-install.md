@@ -45,13 +45,13 @@ If a sandbox blocks local sockets, rerun only the relevant read-only/local conne
 
 ## Start and guided setup
 
-Tell the owner that the normal entry point is the short alias:
+Tell the owner that the normal entry point is the short launcher:
 
 ```text
 rp
 ```
 
-The canonical `research-peer` command remains available with identical behavior. Installation must refuse to overwrite an unrelated existing `~/.local/bin/rp` or shadow another `rp` executable already on `PATH`.
+No-argument `rp` starts the Research Peer Channel with Claude Remote Control enabled for that session. It does not change Claude's global Remote Control setting. The canonical no-argument `research-peer` launcher keeps Remote Control off, while subcommands such as `rp status` and `research-peer status` remain equivalent. Installation must refuse to overwrite an unrelated existing `~/.local/bin/rp` or shadow another `rp` executable already on `PATH`.
 
 Claude Code will show a development-Channel confirmation while Research Peer remains a custom research-preview Channel. The local owner must confirm it. Once Claude opens, guide setup through `/research-peer`; do not make the owner construct low-level `init`, `session register`, `send`, or Channel flag commands.
 

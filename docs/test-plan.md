@@ -6,9 +6,9 @@
 
 테스트 증거는 command, exit status, 주요 assertion, 날짜를 `docs/implementation-status.md`에 기록한다. 실제 상대 server/Remote Control UI는 credential과 endpoint가 제공된 뒤 별도 acceptance로 수행한다.
 
-## 2026-08-13 실행 결과 요약
+## 2026-08-18 실행 결과 요약
 
-- Python unittest: 22 tests pass (room delete/leave cleanup, installer action-skill, 2-peer loopback E2E 포함)
+- Python unittest: 25 tests pass (`rp` Remote Control dispatch, room delete/leave cleanup, installer action-skill, 2-peer loopback E2E 포함)
 - Node test: 4 tests pass, 실제 stdio MCP initialize/listTools handshake 포함
 - Ruff 0.12.9: pass
 - Python compileall: pass
@@ -20,7 +20,7 @@
 - two real Claude Code processes: A QUESTION Channel injection → B MCP ANSWER → A correlated context recall: pass
 - actual plain `/research-peer help` personal skill invocation: pass
 - actual no-argument `research-peer` TTY launch and development-Channel startup: pass
-- **[SERVER-VERIFIED]** installed `rp` alias equivalence, uninstall/residue ownership, and overwrite/PATH-shadowing collision refusal: pass
+- **[SERVER-VERIFIED]** installed `rp` subcommand equivalence, no-argument Remote Control delegation, uninstall/residue ownership, and overwrite/PATH-shadowing collision refusal: pass
 - strict marketplace/plugin validation: pass; 실제 설치 inventory (skills 12, MCP 1): pass
 - actual installed `/research-peer:make` without arguments asked the owner for a room name: pass
 - release archive clean install, installed CLI Channel handshake, full uninstall residue-none: pass
@@ -81,7 +81,7 @@ temp HOME에서:
 
 1. unrelated `~/.claude/settings.json`, skill, plugin, user file 생성
 2. install
-3. canonical CLI/`rp` alias/plugin/personal skill/service/config/state/cache/runtime/manifest 확인
+3. canonical CLI/`rp` launcher/plugin/personal skill/service/config/state/cache/runtime/manifest 확인
 4. install 재실행
 5. 기본 `uninstall --dry-run`이 full local removal plan을 정확히 보이고 mutation이 없는지 확인
 6. 기본 uninstall이 program과 Research Peer state/key를 제거하고 project/artifact를 보존하는지 확인
@@ -109,7 +109,8 @@ temp HOME에서:
 
 자동 test는 launcher command만 검사한다.
 
-- default/`--no-remote-control`: flag 없음
+- no-argument `rp`: `start --remote-control`로 정확히 한 번 위임
+- no-argument `research-peer`와 explicit `--no-remote-control`: flag 없음
 - `--remote-control`: 정확히 한 번 추가
 - `--continue`/`--resume`: 명시된 경우만 추가
 - P2P daemon startup는 RC 실패와 독립

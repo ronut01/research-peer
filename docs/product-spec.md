@@ -65,9 +65,9 @@ research-peer version
 research-peer uninstall [--dry-run] [--keep-data] [--yes] [--purge]
 ```
 
-`rp`는 `research-peer` 전체 명령과 인자를 그대로 전달하는 짧은 CLI alias다. **[SERVER-VERIFIED]** 현재 연구 서버의 설치 전 PATH에는 기존 `rp` command/alias/function이 없었다. **[OFFICIAL]** 이름 자체는 완전히 전용이 아니며 [Homebrew의 ROP 분석 도구](https://formulae.brew.sh/formula/rp)와 [FreeBSD Ports의 Rosenpass 도구](https://man.freebsd.org/cgi/man.cgi?manpath=FreeBSD+Ports+15.0&query=rp&sektion=1)가 `rp` executable을 제공한다. 따라서 installer는 기존 `~/.local/bin/rp`를 덮어쓰지 않으며, PATH의 다른 위치에서 `rp`가 발견돼도 shadowing하지 않고 충돌로 중단한다.
+**[SERVER-VERIFIED]** `rp`는 `research-peer` 하위 명령과 인자를 그대로 전달하는 짧은 CLI launcher다. 유일한 기본 동작 차이는 interactive TTY에서 인자 없이 실행한 `rp`가 `start --remote-control`로 위임하는 것이다. 인자 없는 canonical `research-peer`는 Remote Control off를 유지하며 `rp start --no-remote-control`도 지원한다. 현재 연구 서버의 설치 전 PATH에는 기존 `rp` command/alias/function이 없었다. **[OFFICIAL]** 이름 자체는 완전히 전용이 아니며 [Homebrew의 ROP 분석 도구](https://formulae.brew.sh/formula/rp)와 [FreeBSD Ports의 Rosenpass 도구](https://man.freebsd.org/cgi/man.cgi?manpath=FreeBSD+Ports+15.0&query=rp&sektion=1)가 `rp` executable을 제공한다. 따라서 installer는 기존 `~/.local/bin/rp`를 덮어쓰지 않으며, PATH의 다른 위치에서 `rp`가 발견돼도 shadowing하지 않고 충돌로 중단한다.
 
-`help`, `help doctor`, `help room`, `help uninstall`, 모든 `<command> --help`는 문서를 열지 않고도 다음 행동을 알 수 있게 설명한다: 제품 목적과 버전, doctor, room create/join/pairing, Claude session 시작, Remote Control opt-in, 상태, handoff/question, leave/stop/logs, 제거, 보안 주의사항, 추가 help.
+`help`, `help doctor`, `help room`, `help uninstall`, 모든 `<command> --help`는 문서를 열지 않고도 다음 행동을 알 수 있게 설명한다: 제품 목적과 버전, doctor, room create/join/pairing, `rp`의 session-scoped Remote Control opt-in과 opt-out, 상태, handoff/question, leave/stop/logs, 제거, 보안 주의사항, 추가 help.
 
 ### Claude Code skill
 
@@ -93,7 +93,7 @@ plain `/research-peer`는 overview/fallback이고, plugin action skill은 Claude
 
 **[SERVER-VERIFIED]** 설치된 personal skill에서 plain `/research-peer help`가 실제 Claude Code session 안에서 실행됐다. plugin root `.mcp.json`도 MCP server 한 개를 발견시켰고 `/mcp`에서 connected/2 tools로 표시됐다. 실제 두 Claude process 사이의 QUESTION/ANSWER context 왕복도 통과했다.
 
-정상 사용자 진입점은 인자 없는 `rp`이며, canonical command인 `research-peer`도 동일하게 유지한다. 이는 Channel flag를 감춘 채 Claude Code를 시작하고, 활성 room이 정확히 하나면 자동 binding한다. 이후 create/join/status/ask/leave는 `/research-peer` 또는 자연어로 수행한다. **[OFFICIAL]** Channel은 session-start opt-in이므로 이미 열린 일반 Claude session에서 slash command만으로 inbound injection을 동적으로 활성화할 수는 없다.
+**[SERVER-VERIFIED]** 정상 사용자 진입점은 인자 없는 `rp`다. 이는 Channel flag와 `--remote-control`을 함께 전달해 Claude Code를 시작하고, 활성 room이 정확히 하나면 자동 binding한다. canonical command인 인자 없는 `research-peer`는 같은 Channel launcher이되 Remote Control은 기본 off다. 이후 create/join/status/ask/leave는 `/research-peer` 또는 자연어로 수행한다. **[OFFICIAL]** Channel은 session-start opt-in이므로 이미 열린 일반 Claude session에서 slash command만으로 inbound injection을 동적으로 활성화할 수는 없다.
 
 **[OFFICIAL]** marketplace는 plugin skill/MCP/Channel의 discovery, cache install, version/update를 제공하지만 Research Peer의 별도 per-user daemon/service/CLI 설치 수단은 아니다. v1 distribution은 trusted Git/release의 `./install.sh`로 runtime을 한 번 설치하고, marketplace는 Claude component 배포에 사용한다. plugin action skills는 `/research-peer:make` 같은 namespace를 사용하고, installer가 설치하는 thin personal skill은 plain `/research-peer`를 제공한다.
 
@@ -187,13 +187,13 @@ artifact는 Git commit, 접근 가능한 URL, 공유 storage path, content hash,
 
 ## Claude Channel과 Remote Control
 
-**[OFFICIAL]** custom Channel은 local stdio MCP server이며 `experimental['claude/channel'] = {}`를 선언하고 `notifications/claude/channel`을 보내면 열린 기존 session의 context에 `<channel ...>` provenance로 event가 들어간다. Channel notification 자체에는 Claude 처리 ACK가 없으므로 Research Peer의 transport ACK와 Claude-consumption 상태는 분리한다. custom Channel은 research preview이고 `--dangerously-load-development-channels plugin:research-peer@skills-dir`가 필요하다. `--channels`와 development flag는 `claude --help`에 숨겨져 있지만 이 서버의 현재 2.1.231가 실제 파싱하고 Channel을 연결함을 확인했다. 조직의 `channelsEnabled`는 이 우회보다 우선한다.
+**[OFFICIAL]** custom Channel은 local stdio MCP server이며 `experimental['claude/channel'] = {}`를 선언하고 `notifications/claude/channel`을 보내면 열린 기존 session의 context에 `<channel ...>` provenance로 event가 들어간다. Channel notification 자체에는 Claude 처리 ACK가 없으므로 Research Peer의 transport ACK와 Claude-consumption 상태는 분리한다. custom Channel은 research preview이고 `--dangerously-load-development-channels plugin:research-peer@skills-dir`가 필요하다. **[SERVER-VERIFIED]** 이 서버의 2.1.231에서 Channel 연결 acceptance를 통과했고 현재 2.1.234에서 development Channel과 `--remote-control` 동시 flag parsing을 확인했다. 조직의 `channelsEnabled`는 이 우회보다 우선한다.
 
 Channel은 session 시작 시 load한다. `/research-peer:use ROOM`은 local binding을 활성화하고 `/research-peer:leave`는 binding을 끊는다. daemon은 유지될 수 있지만 inactive room event는 Claude context로 들어가지 않는다. 실행 중에 development Channel을 임의 load/unload할 수 있다고 가정하지 않는다.
 
 Research Peer Channel은 **permission relay capability를 절대 선언하지 않는다.** peer message는 user approval이 아니다. inbound에는 `room`, authenticated `sender`, `message_id`, `request_id`, `type`, `untrusted_peer_input=true` provenance를 표시한다. outbound MCP tools는 message 전송만 하며 config 변경, pairing, leave/delete, uninstall, permission 승인 도구를 노출하지 않는다.
 
-**[OFFICIAL]** Remote Control은 `claude --remote-control` 또는 `claude remote-control`로 자기 claude.ai 계정의 local session을 모바일/브라우저에서 조작한다. local process가 살아 있어야 하며 약 10분 이상의 network outage에서 종료될 수 있다. 모바일 push는 사용자가 terminal에 focus 중이면 생략되는 등 보장되지 않는다. Research Peer는 Remote Control을 transport로 쓰지 않으며 기본 off, 명시적 `--remote-control` opt-in만 허용한다. Remote Control이 꺼지거나 실패해도 P2P daemon은 계속 동작한다. launcher는 `--continue`/`--resume`을 명시적으로 받은 경우에만 기존 conversation을 resume한다.
+**[OFFICIAL]** Remote Control은 `claude --remote-control` 또는 `claude remote-control`로 자기 claude.ai 계정의 local session을 모바일/브라우저에서 조작한다. local process가 살아 있어야 하며 약 10분 이상의 network outage에서 종료될 수 있다. 모바일 push는 사용자가 terminal에 focus 중이면 생략되는 등 보장되지 않는다. Research Peer는 Remote Control을 transport로 쓰지 않는다. **[SERVER-VERIFIED]** 문서화된 인자 없는 `rp` 실행 자체를 해당 local-owner session의 명시적 opt-in으로 취급하며 Claude global setting은 바꾸지 않는다. 인자 없는 `research-peer`와 `rp start --no-remote-control`은 off 경로다. Remote Control이 꺼지거나 실패해도 P2P daemon은 계속 동작한다. launcher는 `--continue`/`--resume`을 명시적으로 받은 경우에만 기존 conversation을 resume한다.
 
 ## 설치와 제거
 
@@ -201,7 +201,7 @@ Research Peer Channel은 **permission relay capability를 절대 선언하지 �
 
 ```text
 ~/.local/bin/research-peer
-~/.local/bin/rp -> research-peer
+~/.local/bin/rp
 ~/.local/share/research-peer/
 ~/.config/research-peer/
 ~/.local/state/research-peer/
@@ -244,7 +244,7 @@ manifest에 없는 broad path, `$HOME`, `~`, repository root, glob은 삭제하�
 10. room isolation
 11. leave session 수신 중단
 12. peer input이 permission/user approval로 작동하지 않음
-13. opt-in Remote Control에서 각 owner가 자기 session을 확인 가능
+13. 인자 없는 `rp`의 opt-in Remote Control에서 각 owner가 자기 session을 확인 가능
 14. Remote Control 없이 P2P 동작
 15. sudo 불필요
 16. 다른 home 접근 불필요
