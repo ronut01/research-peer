@@ -11,15 +11,18 @@ from .protocol import ProtocolError, decode_urlsafe, encode_urlsafe, format_time
 from .store import Store
 
 INVITE_PREFIX = "rp1_"
+DEFAULT_INVITE_MINUTES = 24 * 60
 
 
 def create_invite(
     store: Store, identity: Identity, *, display_name: str, endpoint: str,
-    expires_minutes: int = 30,
+    expires_minutes: int = DEFAULT_INVITE_MINUTES, allow_loopback: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     if not display_name.strip() or len(display_name) > 128:
         raise ValueError("room display name must be 1-128 characters")
-    _validate_endpoint(endpoint)
+    _validate_advertised_endpoint(endpoint, allow_loopback=allow_loopback)
+    if not 1 <= expires_minutes <= 7 * 24 * 60:
+        raise ValueError("invite expiry must be between 1 minute and 7 days")
     room_id = str(uuid.uuid4())
     token = secrets.token_urlsafe(32)
     expires_at = format_time(utc_now() + timedelta(minutes=expires_minutes))
@@ -58,9 +61,9 @@ def decode_invite(code: str) -> dict[str, Any]:
         raise ProtocolError("SCHEMA_INVALID", "invite room_id is invalid") from exc
     if invite["transport"] != "tcp-tls":
         raise ProtocolError("SCHEMA_INVALID", "invite transport is unsupported")
-    _validate_endpoint(invite["endpoint"])
+    _validate_advertised_endpoint(invite["endpoint"], allow_loopback=True)
     if parse_time(invite["expires_at"]) <= utc_now():
-        raise ProtocolError("AUTH_FAILURE", "invite has expired")
+        raise ProtocolError("INVITE_EXPIRED", "invite has expired")
     for field in ("display_name", "fingerprint", "tls_fingerprint", "certificate", "token"):
         if not isinstance(invite[field], str) or not invite[field]:
             raise ProtocolError("SCHEMA_INVALID", f"invite {field} is invalid")
@@ -80,3 +83,14 @@ def _validate_endpoint(endpoint: str) -> tuple[str, int]:
         raise ValueError("endpoint must use a host and high port (1025-65535)")
     return host, port
 
+
+def _validate_advertised_endpoint(endpoint: str, *, allow_loopback: bool = False) -> tuple[str, int]:
+    host, port = _validate_endpoint(endpoint)
+    normalized = host.lower()
+    if normalized in {"0.0.0.0", "::"}:
+        raise ValueError("advertised endpoint cannot be a wildcard address; use a reachable interface address")
+    if normalized in {"127.0.0.1", "::1", "localhost"} and not allow_loopback:
+        raise ValueError(
+            "advertised endpoint is loopback-only; pass --advertise-loopback only when an SSH tunnel makes it reachable"
+        )
+    return host, port

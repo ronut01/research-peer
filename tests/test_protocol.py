@@ -75,7 +75,15 @@ class ProtocolTests(unittest.TestCase):
     def test_canonical_json_is_stable(self) -> None:
         self.assertEqual(canonical_json({"b": 1, "a": "한글"}), canonical_json({"a": "한글", "b": 1}))
 
+    def test_only_question_may_require_a_reply(self) -> None:
+        answer = new_envelope(
+            room_id=str(uuid.uuid4()), message_type="ANSWER", from_user="a", from_session="s",
+            to_user="b", to_session="t", body={"text": "done"}, request_id=str(uuid.uuid4()),
+        )
+        answer["reply_required"] = True
+        with self.assertRaisesRegex(ProtocolError, "only QUESTION"):
+            validate_envelope(answer)
+
 
 if __name__ == "__main__":
     unittest.main()
-

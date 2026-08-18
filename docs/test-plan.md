@@ -1,4 +1,4 @@
-# Research Peer v1 테스트 계획
+# Research Peer 2.0 테스트 계획
 
 ## 원칙
 
@@ -8,7 +8,7 @@
 
 ## 2026-08-18 실행 결과 요약
 
-- Python unittest: 25 tests pass (`rp` Remote Control dispatch, room delete/leave cleanup, installer action-skill, 2-peer loopback E2E 포함)
+- Python unittest: 39 tests pass (`rp` Remote Control dispatch, inbox/session routing, listener mismatch, terminal auto-answer, room delete/leave cleanup, installer/action-skill/updater, 2-peer loopback E2E 포함)
 - Node test: 4 tests pass, 실제 stdio MCP initialize/listTools handshake 포함
 - Ruff 0.12.9: pass
 - Python compileall: pass
@@ -21,24 +21,26 @@
 - actual plain `/research-peer help` personal skill invocation: pass
 - actual no-argument `research-peer` TTY launch and development-Channel startup: pass
 - **[SERVER-VERIFIED]** installed `rp` subcommand equivalence, no-argument Remote Control delegation, uninstall/residue ownership, and overwrite/PATH-shadowing collision refusal: pass
-- strict marketplace/plugin validation: pass; 실제 설치 inventory (skills 12, MCP 1): pass
+- strict marketplace/plugin validation: pass; 1.1 실제 설치 inventory (skills 12, MCP 1)는 historical pass, 2.0 source inventory는 skills 14/MCP 1이며 reinstall acceptance pending
 - actual installed `/research-peer:make` without arguments asked the owner for a room name: pass
-- release archive clean install, installed CLI Channel handshake, full uninstall residue-none: pass
+- release archive clean install, installed 14-skill inventory/`help update`/strict plugin, full uninstall residue-none: pass
 
 ## Static/unit
 
 - protocol: 모든 type, UUID/RFC3339, ANSWER request_id, unknown type/version, oversize, timestamp skew, canonical stability
 - HANDOFF: required research fields, facts/interpretation/assumption 구분
 - identity: generation mode, sign/verify, wrong key/fingerprint, permissions
-- invite: encode/decode, expiry, one-time consume, token redaction
+- invite: encode/decode, 24-hour default, wildcard/loopback advertise validation, expiry, one-time consume, token redaction
 - store: migrations, room name collision, outbox state machine, dedup, replay, restart recovery
 - retry: deterministic capped backoff, permanent/transient classification
 - transport: frame length, truncated/invalid JSON, TLS pin match/mismatch, auth failure
-- routing: exact session, missing/stale target, room isolation, leave cancellation, exact room delete
-- security: rate/loop limits, path traversal refs, credential redaction, peer uninstall text inert
+- routing: exact/latest session assignment, waiting claim, alias retirement, missing/stale target, room isolation, leave cancellation, exact room delete
+- visibility: CLI inbox/history, room status, config/live listener mismatch
+- security: terminal ANSWER, request-id idempotence, automation depth, disclosure default off, rate/loop limits, path traversal refs, credential redaction, peer uninstall text inert
 - CLI help: main and every subcommand snapshot/required phrase
 - installer/uninstaller: manifest integrity, atomic JSON edit, path/symlink guard, idempotence
-- action skills: plugin discovery용 make/join/ask/handoff/rooms/use/status/leave/delete/peers/help 설치
+- updater: fixed production source, source identity/component-version consistency, check-only, downgrade refusal, state-preserving apply, conditional daemon restart
+- action skills: plugin discovery용 make/join/ask/handoff/rooms/use/status/leave/delete/auto-answer/update/peers/help 설치
 
 ## Doctor
 
@@ -51,6 +53,8 @@
 - peer result mapping: DNS, refused, timeout/no-route, TLS fingerprint, auth, protocol
 - SSH binary/target probe 구분
 - 양방향 결과는 remote probe receipt가 없으면 `not tested`
+- configured endpoint와 `daemon.ready` actual listener 비교
+- world-readable UFW/default-input heuristic과 SSH explicit reverse-bind remediation
 
 ## 2-peer vertical slice
 
@@ -74,6 +78,9 @@ temp HOME A/B와 ports A/B:
 16. Remote Control flag 없이 전체 slice가 성공하는지 확인
 17. leave 뒤 pending retry가 즉시 cancelled이고 history는 남는지 확인
 18. delete dry-run은 mutation이 없고 confirmed delete는 선택 room만 제거하는지 확인
+19. CLI inbox가 pending body를 보여주고 history가 sent/automatic audit을 보존하는지 확인
+20. summary policy auto-answer가 request ID를 보존하고 depth를 1 올리는지 확인
+21. 같은 request ID의 두 번째 auto-answer가 거부되는지 확인
 
 ## Installer/uninstaller 격리 acceptance
 
@@ -90,6 +97,8 @@ temp HOME에서:
 9. unrelated files와 project/artifact 보존
 10. 두 번째 uninstall exit 0
 11. symlink target 보존
+12. local newer-version candidate update 후 identity/private key와 room state 보존
+13. inconsistent component version과 downgrade가 installer 실행 전에 거부됨
 
 ## Claude adapter contract
 
@@ -98,7 +107,7 @@ temp HOME에서:
 - stdio stdout에 JSON-RPC 외 출력 없음
 - daemon inbox event가 `notifications/claude/channel`로 변환
 - metadata identifier key만 사용, provenance fields 존재
-- send/answer tool schema와 request_id 유지
+- send/dedicated-answer/status 세 tool schema와 request_id/depth 유지
 - inactive room/missing exact session은 notification 없음
 - installed Claude 2.1.231가 development Channel flag를 parse
 - plugin manifest를 `claude plugin validate`로 검사
@@ -131,6 +140,7 @@ temp HOME에서:
 | 17 help | `test_help.py` |
 | 18–21 install/uninstall | `test_uninstall.py` |
 | 22 operations docs | doc link/check |
+| 32 official update/state preservation | `test_updater.py`, published-GitHub acceptance pending |
 
 ## 실행 명령 목표
 
