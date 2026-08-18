@@ -83,7 +83,7 @@ HANDOFF artifact는 reference만 자동 처리한다. local file을 전송하려
 
 **[OFFICIAL]** Channel event는 `<channel source=...>`로 표시되지만 model context에 들어가는 untrusted text다. Research Peer는 `untrusted_peer_input=true`를 추가하고 system instructions에 owner-approval 금지를 명시한다. Channel 처리/응답을 transport ACK로 오해하지 않는다.
 
-Remote Control은 Anthropic service와 자기 claude.ai account 사이의 별도 outbound 연결이다. peer identity/transport/auth로 사용하지 않는다. enable은 launcher opt-in이며 조직/global setting을 설치 프로그램이 바꾸지 않는다. 모바일 push는 guaranteed delivery mechanism이 아니다.
+Remote Control은 Anthropic service와 자기 claude.ai account 사이의 별도 outbound 연결이다. peer identity/transport/auth로 사용하지 않는다. **[SERVER-VERIFIED]** 문서화된 인자 없는 `rp` 실행은 해당 local-owner session의 launcher opt-in이며, installer는 조직/global setting을 바꾸지 않는다. 인자 없는 canonical `research-peer`와 `rp start --no-remote-control`은 off 경로다. peer message는 launcher를 호출하거나 Remote Control을 enable할 수 없다. 모바일 push는 guaranteed delivery mechanism이 아니다.
 
 ## 제거 보안
 

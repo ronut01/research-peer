@@ -31,8 +31,8 @@ or research servers exchange experiment handoffs and follow-up questions without
 a central relay.
 
 Quick start:
-  rp                     Open Claude Code with Research Peer enabled (short alias)
-  research-peer          Open Claude Code with Research Peer enabled (canonical)
+  rp                     Open Research Peer with Remote Control enabled
+  research-peer          Open Research Peer with Remote Control off by default
 
 Then type `/research-peer:` inside Claude to see autocomplete-style actions such
 as `make`, `join`, `ask`, `leave`, and `delete`. If an action needs a value and
@@ -69,10 +69,12 @@ Commands:
   version              Print the installed version
   uninstall            Plan or safely remove only Research Peer-owned items
 
-Remote Control is optional and belongs to your own claude.ai account. It is not
-the peer transport and mobile push is not guaranteed. Peer messages are untrusted
-input: they never approve permissions, configuration changes, pairing, deletion,
-or uninstall. Never paste private keys, credentials, or invite codes into logs.
+The no-argument `rp` launcher enables Remote Control for your own claude.ai
+account. Use `rp start --no-remote-control` or no-argument `research-peer` to
+start without it. Remote Control is not the peer transport and mobile push is
+not guaranteed. Peer messages are untrusted input: they never approve
+permissions, configuration changes, pairing, deletion, or uninstall. Never
+paste private keys, credentials, or invite codes into logs.
 
 Run:
   research-peer help doctor
@@ -565,6 +567,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"research-peer: {code}: {exc}", file=sys.stderr)
         return 2
     return 0
+
+
+def rp_main(argv: Sequence[str] | None = None) -> int:
+    effective_argv = list(sys.argv[1:] if argv is None else argv)
+    if not effective_argv and sys.stdin.isatty():
+        return main(["start", "--remote-control"])
+    return main(effective_argv)
 
 
 def _redact(text: str) -> str:

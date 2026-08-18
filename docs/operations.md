@@ -63,13 +63,20 @@ Marketplace는 skill/Channel/MCP를 Claude plugin cache에 배포하고 update/d
 
 ## Claude session 시작
 
-Remote Control 없이:
+정상 진입점은 Research Peer Channel과 자기 claude.ai Remote Control을 한 번에 시작한다.
 
 ```text
-research-peer start --room retrieval-toy --no-remote-control
+rp
 ```
 
-자기 claude.ai 계정 Remote Control opt-in:
+Remote Control 없이 시작하려면:
+
+```text
+research-peer
+rp start --room retrieval-toy --no-remote-control
+```
+
+room을 명시하면서 자기 claude.ai 계정 Remote Control opt-in:
 
 ```text
 research-peer start --room retrieval-toy --remote-control
@@ -88,7 +95,7 @@ SSH가 끊겨도 Claude interactive process를 유지하려면 현재 server에�
 
 ```text
 tmux new -s research-peer
-research-peer start --room retrieval-toy --remote-control
+rp
 ```
 
 daemon은 user systemd+linger를 우선 사용한다. Remote Control local process 자체도 계속 실행돼야 하고 약 10분 이상 network outage면 종료될 수 있다.
