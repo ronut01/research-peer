@@ -1,7 +1,7 @@
 # 구현 상태와 복구 체크포인트
 
-마지막 갱신: 2026-08-13 KST  
-현재 phase: **v1.1 room cleanup and slash action UX locally verified; publication pending**
+마지막 갱신: 2026-08-18 KST
+현재 phase: **v1.1 `rp` shortcut, room cleanup, and slash action UX locally verified; peer acceptance pending**
 
 session compaction/restart 뒤 이 파일을 먼저 읽는다. 제품 요구사항은 `docs/product-spec.md`, 설계 결정은 `docs/architecture.md`, 안전 경계는 `docs/security-model.md`, 검증 matrix는 `docs/test-plan.md`가 authority다.
 
@@ -18,7 +18,7 @@ session compaction/restart 뒤 이 파일을 먼저 읽는다. 제품 요구사�
 - exact session routing, no fallback, heartbeat/stale/prune, room leave 격리
 - official MCP SDK stdio Channel, explicit provenance, safe send/status tools, permission relay 없음
 - skills-directory plugin과 plain personal `/research-peer` skill
-- one-word `research-peer` smart launcher, guided slash UX, rich help, Remote Control opt-in, explicit continue/resume
+- short `rp` alias plus canonical `research-peer` smart launcher, guided slash UX, rich help, Remote Control opt-in, explicit continue/resume
 - user systemd 우선, tmux fallback, rotating logs, stale PID/runtime cleanup
 - manifest installer, default full local removal/keep-data safe uninstaller, residue scan
 - README와 formal docs 6개
@@ -49,7 +49,7 @@ session compaction/restart 뒤 이 파일을 먼저 읽는다. 제품 요구사�
 - PASS: authenticated doctor probe, fingerprint mismatch, one-way result classification
 - PASS: room isolation, exact session, leave, rate/loop boundaries
 - PASS: actual stdio MCP initialize/listTools handshake; `claude/channel` present, permission relay absent
-- PASS: Python unittest 22
+- PASS: Python unittest 24
 - PASS: Node tests 4
 - PASS: Ruff 0.12.9, Python compileall, Claude plugin validation
 - PASS: npm audit production dependency vulnerabilities 0
@@ -59,6 +59,7 @@ session compaction/restart 뒤 이 파일을 먼저 읽는다. 제품 요구사�
 - PASS: two simultaneous real Claude Code processes; A QUESTION injected into B, B ANSWER sent through MCP with preserved request ID, A incorporated it in context
 - PASS: actual plain `/research-peer help` personal skill invocation
 - PASS: actual one-word `research-peer` launch opened Claude Code 2.1.231 with the Research Peer development Channel selected
+- PASS: **[SERVER-VERIFIED]** current user install resolves `rp` to the canonical launcher and reports the same 1.1.0 version; installer tests include it in uninstall/residue handling and refuse both overwrite and PATH shadowing conflicts
 - PASS: installed plugin inventory found skills 12 and MCP Channel 1
 - PASS: archive without node_modules clean install fetched locked dependency, installed CLI Channel handshake exposed two tools, default uninstall left no residue
 - PASS: public distribution content sanitized and published from a separate staging checkout to `https://github.com/ronut01/research-peer`

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from research_peer.installer import install, residue_scan
+from research_peer.installer import InstallSafetyError, install, residue_scan
 from research_peer.paths import Paths
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +19,7 @@ class InstallerTests(unittest.TestCase):
         self.home = Path(self.temp.name)
         self.old = os.environ.copy()
         os.environ.update({"HOME": str(self.home), "RESEARCH_PEER_HOME": str(self.home), "RESEARCH_PEER_TESTING": "1"})
+        os.environ["PATH"] = "/usr/bin:/bin"
         for key in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "XDG_RUNTIME_DIR"):
             os.environ.pop(key, None)
         os.environ["XDG_RUNTIME_DIR"] = self.runtime_temp.name
@@ -40,10 +41,21 @@ class InstallerTests(unittest.TestCase):
         env = os.environ.copy()
         return subprocess.run([str(self.home / ".local/bin/research-peer"), *args], input=input_text, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
 
+    def run_shortcut(self, *args: str) -> subprocess.CompletedProcess:
+        env = os.environ.copy()
+        return subprocess.run([str(self.home / ".local/bin/rp"), *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+
     def test_install_dry_run_purge_and_idempotent_uninstall(self) -> None:
         install(ROOT, self.paths)
         install(ROOT, self.paths)
         self.assertTrue((self.home / ".local/bin/research-peer").exists())
+        shortcut = self.home / ".local/bin/rp"
+        self.assertTrue(shortcut.is_symlink())
+        self.assertEqual("research-peer", os.readlink(shortcut))
+        canonical_version = self.run_cli("version")
+        shortcut_version = self.run_shortcut("version")
+        self.assertEqual(canonical_version.returncode, shortcut_version.returncode)
+        self.assertEqual(canonical_version.stdout, shortcut_version.stdout)
         self.assertTrue((self.home / ".claude/skills/research-peer/SKILL.md").exists())
         self.assertTrue((self.home / ".claude/skills/research-peer-plugin/.claude-plugin/plugin.json").exists())
         self.assertTrue((self.home / ".claude/skills/research-peer-plugin/.mcp.json").exists())
@@ -52,6 +64,7 @@ class InstallerTests(unittest.TestCase):
         before = self.paths.manifest_file.read_bytes()
         dry = self.run_cli("uninstall", "--dry-run", "--purge")
         self.assertEqual(0, dry.returncode, dry.stderr)
+        self.assertIn(str(shortcut), dry.stdout)
         self.assertEqual(before, self.paths.manifest_file.read_bytes())
         outside = self.home / "outside.txt"
         outside.write_text("preserve symlink target")
@@ -76,6 +89,7 @@ class InstallerTests(unittest.TestCase):
         kept = self.run_cli("uninstall", "--yes", "--keep-data")
         self.assertEqual(0, kept.returncode, kept.stderr)
         self.assertFalse((self.home / ".local/bin/research-peer").exists())
+        self.assertFalse((self.home / ".local/bin/rp").exists())
         self.assertFalse((self.home / ".claude/skills/research-peer").exists())
         self.assertFalse((self.home / ".claude/skills/research-peer-plugin").exists())
         self.assertFalse((self.home / ".config/systemd/user/research-peer.service").exists())
@@ -93,6 +107,30 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse(any(path.exists() or path.is_symlink() for path in residue_scan(self.paths)))
         self.assertTrue((self.home / "experiment.txt").exists())
         self.assertTrue((self.home / ".claude/settings.json").exists())
+
+    def test_install_refuses_to_overwrite_unowned_rp_command(self) -> None:
+        shortcut = self.home / ".local/bin/rp"
+        shortcut.parent.mkdir(parents=True)
+        shortcut.write_text("unrelated command\n")
+
+        with self.assertRaisesRegex(InstallSafetyError, "refusing to overwrite unowned path"):
+            install(ROOT, self.paths)
+
+        self.assertEqual("unrelated command\n", shortcut.read_text())
+
+    def test_install_refuses_to_shadow_rp_elsewhere_on_path(self) -> None:
+        other_bin = self.home / "other-bin"
+        other_bin.mkdir()
+        other_command = other_bin / "rp"
+        other_command.write_text("#!/bin/sh\nexit 0\n")
+        other_command.chmod(0o755)
+        os.environ["PATH"] = f"{other_bin}:{os.environ['PATH']}"
+
+        with self.assertRaisesRegex(InstallSafetyError, "refusing to shadow existing command"):
+            install(ROOT, self.paths)
+
+        self.assertFalse((self.home / ".local/bin/rp").exists())
+        self.assertFalse(self.paths.manifest_file.exists())
 
 
 if __name__ == "__main__":

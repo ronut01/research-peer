@@ -65,6 +65,8 @@ research-peer version
 research-peer uninstall [--dry-run] [--keep-data] [--yes] [--purge]
 ```
 
+`rp`는 `research-peer` 전체 명령과 인자를 그대로 전달하는 짧은 CLI alias다. **[SERVER-VERIFIED]** 현재 연구 서버의 설치 전 PATH에는 기존 `rp` command/alias/function이 없었다. **[OFFICIAL]** 이름 자체는 완전히 전용이 아니며 [Homebrew의 ROP 분석 도구](https://formulae.brew.sh/formula/rp)와 [FreeBSD Ports의 Rosenpass 도구](https://man.freebsd.org/cgi/man.cgi?manpath=FreeBSD+Ports+15.0&query=rp&sektion=1)가 `rp` executable을 제공한다. 따라서 installer는 기존 `~/.local/bin/rp`를 덮어쓰지 않으며, PATH의 다른 위치에서 `rp`가 발견돼도 shadowing하지 않고 충돌로 중단한다.
+
 `help`, `help doctor`, `help room`, `help uninstall`, 모든 `<command> --help`는 문서를 열지 않고도 다음 행동을 알 수 있게 설명한다: 제품 목적과 버전, doctor, room create/join/pairing, Claude session 시작, Remote Control opt-in, 상태, handoff/question, leave/stop/logs, 제거, 보안 주의사항, 추가 help.
 
 ### Claude Code skill
@@ -91,7 +93,7 @@ plain `/research-peer`는 overview/fallback이고, plugin action skill은 Claude
 
 **[SERVER-VERIFIED]** 설치된 personal skill에서 plain `/research-peer help`가 실제 Claude Code session 안에서 실행됐다. plugin root `.mcp.json`도 MCP server 한 개를 발견시켰고 `/mcp`에서 connected/2 tools로 표시됐다. 실제 두 Claude process 사이의 QUESTION/ANSWER context 왕복도 통과했다.
 
-정상 사용자 진입점은 인자 없는 `research-peer` 한 단어다. 이는 Channel flag를 감춘 채 Claude Code를 시작하고, 활성 room이 정확히 하나면 자동 binding한다. 이후 create/join/status/ask/leave는 `/research-peer` 또는 자연어로 수행한다. **[OFFICIAL]** Channel은 session-start opt-in이므로 이미 열린 일반 Claude session에서 slash command만으로 inbound injection을 동적으로 활성화할 수는 없다.
+정상 사용자 진입점은 인자 없는 `rp`이며, canonical command인 `research-peer`도 동일하게 유지한다. 이는 Channel flag를 감춘 채 Claude Code를 시작하고, 활성 room이 정확히 하나면 자동 binding한다. 이후 create/join/status/ask/leave는 `/research-peer` 또는 자연어로 수행한다. **[OFFICIAL]** Channel은 session-start opt-in이므로 이미 열린 일반 Claude session에서 slash command만으로 inbound injection을 동적으로 활성화할 수는 없다.
 
 **[OFFICIAL]** marketplace는 plugin skill/MCP/Channel의 discovery, cache install, version/update를 제공하지만 Research Peer의 별도 per-user daemon/service/CLI 설치 수단은 아니다. v1 distribution은 trusted Git/release의 `./install.sh`로 runtime을 한 번 설치하고, marketplace는 Claude component 배포에 사용한다. plugin action skills는 `/research-peer:make` 같은 namespace를 사용하고, installer가 설치하는 thin personal skill은 plain `/research-peer`를 제공한다.
 
@@ -199,6 +201,7 @@ Research Peer Channel은 **permission relay capability를 절대 선언하지 �
 
 ```text
 ~/.local/bin/research-peer
+~/.local/bin/rp -> research-peer
 ~/.local/share/research-peer/
 ~/.config/research-peer/
 ~/.local/state/research-peer/

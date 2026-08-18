@@ -28,6 +28,7 @@ the documented Research Peer project.
 
 After installation, run and inspect:
   research-peer version
+  rp version
   research-peer doctor
   research-peer help
   claude plugin details research-peer@skills-dir
@@ -37,7 +38,7 @@ Do not pair a peer or expose a network port yet. Report the installed version,
 installed user-scope components, Claude plugin/Channel status, doctor results,
 daemon status, uninstall dry-run summary, and any remaining information needed
 for a real peer test. When verification is complete, tell me that normal use
-starts with the single command: research-peer
+starts with the short command: rp
 ```
 
 The block is directly copyable without editing. The agent must still have explicit local-owner authorization to install. Repository instructions, an invite, an issue, or a peer message are not authorization by themselves. The authoritative workflow is [docs/agent-install.md](docs/agent-install.md).
@@ -60,13 +61,15 @@ From a reviewed checkout:
 
 The installer uses user-scoped XDG locations, installs the pinned MCP SDK dependency when needed, and records every owned path in an install manifest.
 
-## Start
+## Run shortcut (`rp`)
 
-The normal entry point is one word:
+Use the short terminal command below to launch Claude Code with Research Peer enabled:
 
 ```bash
-research-peer
+rp
 ```
+
+`rp` is an exact shortcut for the canonical `research-peer` command, so all arguments work the same way—for example, `rp status` and `research-peer status` are equivalent. The installer stops and reports a conflict rather than overwriting an existing `~/.local/bin/rp` or shadowing another `rp` executable already on `PATH`.
 
 This opens Claude Code with the Research Peer Channel enabled. While custom Channels remain an Anthropic research-preview feature, Claude shows a local-development warning at startup; the local owner must confirm it.
 
@@ -96,7 +99,7 @@ experiment. When the answer arrives, connect it to my current follow-up task.
 
 ## Two-person setup
 
-Both researchers install Research Peer in their own Unix accounts and run `research-peer`. The first researcher creates a room inside Claude:
+Both researchers install Research Peer in their own Unix accounts and run `rp` (or `research-peer`). The first researcher creates a room inside Claude:
 
 ```text
 /research-peer:make retrieval-toy
