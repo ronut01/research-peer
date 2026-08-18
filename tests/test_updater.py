@@ -17,6 +17,7 @@ from research_peer.updater import UpdateError, _clone_official, inspect_release,
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CURRENT_VERSION = "2.0.1"
 
 
 class UpdaterTests(unittest.TestCase):
@@ -54,9 +55,9 @@ class UpdaterTests(unittest.TestCase):
             ignore=shutil.ignore_patterns(".git", "dist", "node_modules", "__pycache__", "*.pyc"),
         )
         init_file = candidate / "src/research_peer/__init__.py"
-        init_file.write_text(init_file.read_text().replace('2.0.0', version), encoding="utf-8")
+        init_file.write_text(init_file.read_text().replace(CURRENT_VERSION, version), encoding="utf-8")
         pyproject = candidate / "pyproject.toml"
-        pyproject.write_text(pyproject.read_text().replace('version = "2.0.0"', f'version = "{version}"'), encoding="utf-8")
+        pyproject.write_text(pyproject.read_text().replace(f'version = "{CURRENT_VERSION}"', f'version = "{version}"'), encoding="utf-8")
         for relative in ("package.json", "package-lock.json", "plugin/.claude-plugin/plugin.json", ".claude-plugin/marketplace.json"):
             path = candidate / relative
             value = json.loads(path.read_text(encoding="utf-8"))
@@ -77,8 +78,8 @@ class UpdaterTests(unittest.TestCase):
         return {"commit": "a" * 40, "branch": "main"}
 
     def test_source_release_versions_are_consistent(self) -> None:
-        self.assertEqual("2.0.0", inspect_release(ROOT)["version"])
-        candidate = self._candidate("2.0.1")
+        self.assertEqual(CURRENT_VERSION, inspect_release(ROOT)["version"])
+        candidate = self._candidate("2.0.2")
         plugin = candidate / "plugin/.claude-plugin/plugin.json"
         value = json.loads(plugin.read_text())
         value["version"] = "9.9.9"
@@ -87,7 +88,7 @@ class UpdaterTests(unittest.TestCase):
             inspect_release(candidate)
 
     def test_clone_records_exact_test_origin_and_commit(self) -> None:
-        candidate = self._candidate("2.0.1")
+        candidate = self._candidate("2.0.2")
         subprocess.run(["git", "init", str(candidate)], stdout=subprocess.DEVNULL, check=True)
         subprocess.run(["git", "-C", str(candidate), "add", "."], stdout=subprocess.DEVNULL, check=True)
         subprocess.run(
@@ -116,10 +117,10 @@ class UpdaterTests(unittest.TestCase):
             check=True,
         ).stdout.strip())
         self.assertRegex(revision["commit"], r"^[0-9a-f]{40}$")
-        self.assertEqual("2.0.1", inspect_release(destination)["version"])
+        self.assertEqual("2.0.2", inspect_release(destination)["version"])
 
     def test_check_reports_update_without_installing(self) -> None:
-        candidate = self._candidate("2.0.1")
+        candidate = self._candidate("2.0.2")
 
         def clone(destination: Path) -> dict[str, str]:
             shutil.copytree(candidate, destination)
@@ -134,7 +135,7 @@ class UpdaterTests(unittest.TestCase):
         installer.assert_not_called()
 
     def test_update_installs_candidate_and_preserves_state(self) -> None:
-        candidate = self._candidate("2.0.1")
+        candidate = self._candidate("2.0.2")
         identity_before = self.paths.identity_key.read_bytes()
         connection = sqlite3.connect(self.paths.db_file)
         connection.execute(
@@ -173,7 +174,7 @@ class UpdaterTests(unittest.TestCase):
         stop.assert_called_once_with()
         restart.assert_called_once_with(self.paths)
         self.assertEqual(identity_before, self.paths.identity_key.read_bytes())
-        self.assertEqual("2.0.1", json.loads(self.paths.manifest_file.read_text())["version"])
+        self.assertEqual("2.0.2", json.loads(self.paths.manifest_file.read_text())["version"])
         self.assertTrue((self.home / ".claude/skills/research-peer-plugin/skills/update/SKILL.md").is_file())
         version = subprocess.run(
             [str(self.home / ".local/bin/research-peer"), "version"],
@@ -182,7 +183,7 @@ class UpdaterTests(unittest.TestCase):
             stdout=subprocess.PIPE,
             check=True,
         ).stdout.strip()
-        self.assertEqual("2.0.1", version)
+        self.assertEqual("2.0.2", version)
         connection = sqlite3.connect(self.paths.db_file)
         room = connection.execute("SELECT display_name FROM rooms WHERE room_id=?", ("11111111-1111-4111-8111-111111111111",)).fetchone()
         connection.close()

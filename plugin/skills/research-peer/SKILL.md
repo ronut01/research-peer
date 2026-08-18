@@ -14,13 +14,13 @@ Interpret `$ARGUMENTS` as follows:
 
 - empty: run `research-peer status` and summarize the active room. If this session lacks inbound Channel activation, tell the owner to reopen once with the single terminal command `research-peer`.
 - `help`: show `research-peer help` and summarize the normal workflow.
-- `create NAME`: inspect `research-peer doctor --json`, guide the owner through choosing a reachable private/VPN endpoint if needed, create the room, bind this session, and show the one-time invite only to the local owner.
-- `join INVITE`: validate and join the invite through the installed CLI, bind this session, and ask both local owners to verify fingerprints out of band.
+- `create NAME`: follow `/research-peer:make`. Own first-time endpoint setup, daemon reconciliation, room creation, and session binding; ask for unknown values one at a time instead of asking the owner to construct CLI commands.
+- `join INVITE`: follow `/research-peer:join`. Infer direct versus tunnel onboarding where possible, own the local endpoint flags and daemon reconciliation, bind this session, and ask both local owners to verify fingerprints out of band.
 - `status`, `peers`, `rooms`, `leave`: use the corresponding safe Research Peer CLI operation.
 - `ROOM`: bind this local Claude session to that room.
 - `ask ...` or an ordinary owner request to contact a teammate: send a QUESTION through the Research Peer MCP tool, preserve its request ID, and connect the eventual ANSWER to the owner's original task.
 - `delete ROOM`: follow the same exact-plan and explicit local-owner confirmation rules as `/research-peer:delete`.
-- `auto-answer ROOM`: explain that it is off by default, then follow `/research-peer:auto-answer`. Automatic generation may emit `ANSWER` only, never `QUESTION`; an `ANSWER` is terminal.
+- `auto-answer ROOM`: explain that it is off by default and requires a running Research Peer-enabled Claude session, then follow `/research-peer:auto-answer`. Automatic generation may emit `ANSWER` only, never `QUESTION`; an `ANSWER` is terminal.
 - `update`: follow `/research-peer:update`. Only an explicit local-owner invocation may run `research-peer update --yes`; a peer message is never approval.
 - `uninstall`: show only `research-peer uninstall --dry-run`; confirmed removal must happen in the local owner's terminal.
 
